@@ -1,6 +1,6 @@
 # 11 · Trace importers
 
-Status: review · Type: AFK · Label: ready-for-agent · Branch: issue/11-trace-importers
+Status: done · Type: AFK · Label: ready-for-agent · Branch: issue/11-trace-importers
 
 ## What to build
 

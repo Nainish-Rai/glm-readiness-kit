@@ -15,7 +15,7 @@ Statuses: `ready` → `in-progress` → `review` → `done` (or `blocked`). Labe
 | 08 | [Bridge: LiteLLM plugin adapter](08-bridge-litellm.md) | AFK | 06 | blocked |
 | 09 | [Spend and loop guard](09-guard.md) | AFK | 06 | blocked |
 | 10 | [Migration eval engine](10-eval-engine.md) | AFK | 01 | in-progress |
-| 11 | [Trace importers](11-trace-importers.md) | AFK | 01 | in-progress |
+| 11 | [Trace importers](11-trace-importers.md) | AFK | 01 | done |
 | 12 | [Cost and cache forensics](12-cost-forensics.md) | AFK | 01 | in-progress |
 | 13 | [FDE workbench + demo golden sets](13-fde-workbench.md) | AFK | 10 | blocked |
 | 14 | [Deploy: sizing calculator + reference deployment](14-deploy.md) | AFK | 01 | in-progress |
