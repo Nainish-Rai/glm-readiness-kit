@@ -1,5 +1,11 @@
 from __future__ import annotations
 
+import os
+
+# Typer forces a colour terminal when GITHUB_ACTIONS is set, which splits option names in --help output with ANSI
+# codes; it reads this at import time, so it has to be set before anything imports typer.
+os.environ.setdefault("_TYPER_FORCE_DISABLE_TERMINAL", "1")
+
 from collections.abc import Iterator
 from pathlib import Path
 
