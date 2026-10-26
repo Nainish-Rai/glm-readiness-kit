@@ -1,0 +1,808 @@
+{
+ "name": "canaries",
+ "version": 1,
+ "description": "Capability canaries: a BFCL-style tool-call slice, a small math slice and long-context needles (percent-of-reference with a 95% CI).",
+ "filler": [
+  "The committee reviewed the quarterly logistics summary and noted no deviations from the agreed schedule.",
+  "Warehouse staff rotated shifts according to the posted roster, and the inventory counts matched the ledger.",
+  "A routine inspection of the loading dock found the equipment in good working order.",
+  "Customer correspondence was triaged by region, and standard replies were sent within the usual window.",
+  "The maintenance log lists a lubricant change, a belt replacement and a calibration of the sorting scanner.",
+  "Meeting notes record that the supplier agreed to deliver the remaining pallets before the end of the month.",
+  "Weather delays at the northern depot were absorbed by rerouting two trucks through the central hub.",
+  "The training session covered forklift safety, labeling rules and the revised returns procedure."
+ ],
+ "bfcl": [
+  {
+   "id": "bfcl-01",
+   "family": "bfcl",
+   "prompt": "What is the weather in Paris in celsius?",
+   "tools": [
+    {
+     "name": "get_weather",
+     "description": "Get the current weather for a city.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "city": {
+        "type": "string"
+       },
+       "unit": {
+        "type": "string",
+        "enum": [
+         "celsius",
+         "fahrenheit"
+        ]
+       }
+      },
+      "required": [
+       "city"
+      ]
+     }
+    },
+    {
+     "name": "get_stock_price",
+     "description": "Get the latest stock price for a ticker.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "ticker": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "ticker"
+      ]
+     }
+    }
+   ],
+   "expected_calls": [
+    {
+     "name": "get_weather",
+     "arguments": {
+      "city": "Paris",
+      "unit": "celsius"
+     }
+    }
+   ]
+  },
+  {
+   "id": "bfcl-02",
+   "family": "bfcl",
+   "prompt": "What is the latest price of NVDA?",
+   "tools": [
+    {
+     "name": "get_weather",
+     "description": "Get the current weather for a city.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "city": {
+        "type": "string"
+       },
+       "unit": {
+        "type": "string",
+        "enum": [
+         "celsius",
+         "fahrenheit"
+        ]
+       }
+      },
+      "required": [
+       "city"
+      ]
+     }
+    },
+    {
+     "name": "get_stock_price",
+     "description": "Get the latest stock price for a ticker.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "ticker": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "ticker"
+      ]
+     }
+    },
+    {
+     "name": "send_email",
+     "description": "Send an email.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "to": {
+        "type": "string"
+       },
+       "subject": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "to",
+       "subject"
+      ]
+     }
+    }
+   ],
+   "expected_calls": [
+    {
+     "name": "get_stock_price",
+     "arguments": {
+      "ticker": "NVDA"
+     }
+    }
+   ]
+  },
+  {
+   "id": "bfcl-03",
+   "family": "bfcl",
+   "prompt": "Email ana@example.com with the subject Budget.",
+   "tools": [
+    {
+     "name": "send_email",
+     "description": "Send an email.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "to": {
+        "type": "string"
+       },
+       "subject": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "to",
+       "subject"
+      ]
+     }
+    },
+    {
+     "name": "create_event",
+     "description": "Create a calendar event.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "title": {
+        "type": "string"
+       },
+       "date": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "title",
+       "date"
+      ]
+     }
+    }
+   ],
+   "expected_calls": [
+    {
+     "name": "send_email",
+     "arguments": {
+      "to": "ana@example.com",
+      "subject": "Budget"
+     }
+    }
+   ]
+  },
+  {
+   "id": "bfcl-04",
+   "family": "bfcl",
+   "prompt": "Create an event called Launch on 2031-03-14.",
+   "tools": [
+    {
+     "name": "create_event",
+     "description": "Create a calendar event.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "title": {
+        "type": "string"
+       },
+       "date": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "title",
+       "date"
+      ]
+     }
+    },
+    {
+     "name": "send_email",
+     "description": "Send an email.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "to": {
+        "type": "string"
+       },
+       "subject": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "to",
+       "subject"
+      ]
+     }
+    },
+    {
+     "name": "set_timer",
+     "description": "Set a timer in minutes.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "minutes": {
+        "type": "integer"
+       }
+      },
+      "required": [
+       "minutes"
+      ]
+     }
+    }
+   ],
+   "expected_calls": [
+    {
+     "name": "create_event",
+     "arguments": {
+      "title": "Launch",
+      "date": "2031-03-14"
+     }
+    }
+   ]
+  },
+  {
+   "id": "bfcl-05",
+   "family": "bfcl",
+   "prompt": "Convert 250 EUR to JPY.",
+   "tools": [
+    {
+     "name": "convert_currency",
+     "description": "Convert an amount between currencies.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "amount": {
+        "type": "number"
+       },
+       "from": {
+        "type": "string"
+       },
+       "to": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "amount",
+       "from",
+       "to"
+      ]
+     }
+    },
+    {
+     "name": "get_stock_price",
+     "description": "Get the latest stock price for a ticker.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "ticker": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "ticker"
+      ]
+     }
+    }
+   ],
+   "expected_calls": [
+    {
+     "name": "convert_currency",
+     "arguments": {
+      "amount": 250,
+      "from": "EUR",
+      "to": "JPY"
+     }
+    }
+   ]
+  },
+  {
+   "id": "bfcl-06",
+   "family": "bfcl",
+   "prompt": "What is the area of a circle with radius 3?",
+   "tools": [
+    {
+     "name": "circle_area",
+     "description": "Area of a circle from its radius.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "radius": {
+        "type": "number"
+       }
+      },
+      "required": [
+       "radius"
+      ]
+     }
+    },
+    {
+     "name": "convert_currency",
+     "description": "Convert an amount between currencies.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "amount": {
+        "type": "number"
+       },
+       "from": {
+        "type": "string"
+       },
+       "to": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "amount",
+       "from",
+       "to"
+      ]
+     }
+    }
+   ],
+   "expected_calls": [
+    {
+     "name": "circle_area",
+     "arguments": {
+      "radius": 3
+     }
+    }
+   ]
+  },
+  {
+   "id": "bfcl-07",
+   "family": "bfcl",
+   "prompt": "Set a timer for 15 minutes.",
+   "tools": [
+    {
+     "name": "set_timer",
+     "description": "Set a timer in minutes.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "minutes": {
+        "type": "integer"
+       }
+      },
+      "required": [
+       "minutes"
+      ]
+     }
+    },
+    {
+     "name": "create_event",
+     "description": "Create a calendar event.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "title": {
+        "type": "string"
+       },
+       "date": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "title",
+       "date"
+      ]
+     }
+    }
+   ],
+   "expected_calls": [
+    {
+     "name": "set_timer",
+     "arguments": {
+      "minutes": 15
+     }
+    }
+   ]
+  },
+  {
+   "id": "bfcl-08",
+   "family": "bfcl",
+   "prompt": "Weather in Tokyo please, in fahrenheit.",
+   "tools": [
+    {
+     "name": "get_weather",
+     "description": "Get the current weather for a city.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "city": {
+        "type": "string"
+       },
+       "unit": {
+        "type": "string",
+        "enum": [
+         "celsius",
+         "fahrenheit"
+        ]
+       }
+      },
+      "required": [
+       "city"
+      ]
+     }
+    },
+    {
+     "name": "set_timer",
+     "description": "Set a timer in minutes.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "minutes": {
+        "type": "integer"
+       }
+      },
+      "required": [
+       "minutes"
+      ]
+     }
+    },
+    {
+     "name": "circle_area",
+     "description": "Area of a circle from its radius.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "radius": {
+        "type": "number"
+       }
+      },
+      "required": [
+       "radius"
+      ]
+     }
+    }
+   ],
+   "expected_calls": [
+    {
+     "name": "get_weather",
+     "arguments": {
+      "city": "Tokyo",
+      "unit": "fahrenheit"
+     }
+    }
+   ]
+  },
+  {
+   "id": "bfcl-09",
+   "family": "bfcl",
+   "prompt": "Get the weather in Berlin and the price of AAPL.",
+   "tools": [
+    {
+     "name": "get_weather",
+     "description": "Get the current weather for a city.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "city": {
+        "type": "string"
+       },
+       "unit": {
+        "type": "string",
+        "enum": [
+         "celsius",
+         "fahrenheit"
+        ]
+       }
+      },
+      "required": [
+       "city"
+      ]
+     }
+    },
+    {
+     "name": "get_stock_price",
+     "description": "Get the latest stock price for a ticker.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "ticker": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "ticker"
+      ]
+     }
+    }
+   ],
+   "expected_calls": [
+    {
+     "name": "get_weather",
+     "arguments": {
+      "city": "Berlin"
+     }
+    },
+    {
+     "name": "get_stock_price",
+     "arguments": {
+      "ticker": "AAPL"
+     }
+    }
+   ]
+  },
+  {
+   "id": "bfcl-10",
+   "family": "bfcl",
+   "prompt": "Set a 5 minute timer and a 10 minute timer.",
+   "tools": [
+    {
+     "name": "set_timer",
+     "description": "Set a timer in minutes.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "minutes": {
+        "type": "integer"
+       }
+      },
+      "required": [
+       "minutes"
+      ]
+     }
+    },
+    {
+     "name": "create_event",
+     "description": "Create a calendar event.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "title": {
+        "type": "string"
+       },
+       "date": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "title",
+       "date"
+      ]
+     }
+    }
+   ],
+   "expected_calls": [
+    {
+     "name": "set_timer",
+     "arguments": {
+      "minutes": 5
+     }
+    },
+    {
+     "name": "set_timer",
+     "arguments": {
+      "minutes": 10
+     }
+    }
+   ]
+  },
+  {
+   "id": "bfcl-11",
+   "family": "bfcl",
+   "prompt": "Convert 100 USD to CHF and email bo@example.com with the subject Rates.",
+   "tools": [
+    {
+     "name": "convert_currency",
+     "description": "Convert an amount between currencies.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "amount": {
+        "type": "number"
+       },
+       "from": {
+        "type": "string"
+       },
+       "to": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "amount",
+       "from",
+       "to"
+      ]
+     }
+    },
+    {
+     "name": "send_email",
+     "description": "Send an email.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "to": {
+        "type": "string"
+       },
+       "subject": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "to",
+       "subject"
+      ]
+     }
+    }
+   ],
+   "expected_calls": [
+    {
+     "name": "convert_currency",
+     "arguments": {
+      "amount": 100,
+      "from": "USD",
+      "to": "CHF"
+     }
+    },
+    {
+     "name": "send_email",
+     "arguments": {
+      "to": "bo@example.com",
+      "subject": "Rates"
+     }
+    }
+   ]
+  },
+  {
+   "id": "bfcl-12",
+   "family": "bfcl",
+   "prompt": "Price of MSFT and price of GOOG.",
+   "tools": [
+    {
+     "name": "get_stock_price",
+     "description": "Get the latest stock price for a ticker.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "ticker": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "ticker"
+      ]
+     }
+    },
+    {
+     "name": "get_weather",
+     "description": "Get the current weather for a city.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "city": {
+        "type": "string"
+       },
+       "unit": {
+        "type": "string",
+        "enum": [
+         "celsius",
+         "fahrenheit"
+        ]
+       }
+      },
+      "required": [
+       "city"
+      ]
+     }
+    }
+   ],
+   "expected_calls": [
+    {
+     "name": "get_stock_price",
+     "arguments": {
+      "ticker": "MSFT"
+     }
+    },
+    {
+     "name": "get_stock_price",
+     "arguments": {
+      "ticker": "GOOG"
+     }
+    }
+   ]
+  }
+ ],
+ "math": [
+  {
+   "id": "math-01",
+   "family": "math",
+   "prompt": "What is 17 * 23? Give only the final number.",
+   "expected_text": "391"
+  },
+  {
+   "id": "math-02",
+   "family": "math",
+   "prompt": "What is 144 divided by 12 plus 7? Give only the final number.",
+   "expected_text": "19"
+  },
+  {
+   "id": "math-03",
+   "family": "math",
+   "prompt": "A train covers 60 km in 45 minutes. How many km does it cover in 3 hours at the same speed? Give only the final number.",
+   "expected_text": "240"
+  },
+  {
+   "id": "math-04",
+   "family": "math",
+   "prompt": "What is the sum of the integers from 1 to 40? Give only the final number.",
+   "expected_text": "820"
+  },
+  {
+   "id": "math-05",
+   "family": "math",
+   "prompt": "What is 2 to the power 10 minus 24? Give only the final number.",
+   "expected_text": "1000"
+  },
+  {
+   "id": "math-06",
+   "family": "math",
+   "prompt": "How many seconds are in 2 hours and 5 minutes? Give only the final number.",
+   "expected_text": "7500"
+  },
+  {
+   "id": "math-07",
+   "family": "math",
+   "prompt": "What is 15 percent of 880? Give only the final number.",
+   "expected_text": "132"
+  },
+  {
+   "id": "math-08",
+   "family": "math",
+   "prompt": "Solve for x: 3x + 7 = 52. Give only the final number.",
+   "expected_text": "15"
+  },
+  {
+   "id": "math-09",
+   "family": "math",
+   "prompt": "What is the least common multiple of 12 and 18? Give only the final number.",
+   "expected_text": "36"
+  },
+  {
+   "id": "math-10",
+   "family": "math",
+   "prompt": "A rectangle has perimeter 54 and width 9. What is its length? Give only the final number.",
+   "expected_text": "18"
+  }
+ ],
+ "needle": [
+  {
+   "id": "needle-01",
+   "family": "needle",
+   "tokens": 128000,
+   "depth": 0.25,
+   "needle": "The vault access code for project Heron is 7491-QX.",
+   "question": "What is the vault access code for project Heron? Give only the code.",
+   "expected_text": "7491-QX"
+  },
+  {
+   "id": "needle-02",
+   "family": "needle",
+   "tokens": 128000,
+   "depth": 0.75,
+   "needle": "The backup ferry to Lindholm leaves from pier 14B at 06:40.",
+   "question": "From which pier does the backup ferry to Lindholm leave? Give only the pier.",
+   "expected_text": "14B"
+  }
+ ]
+}

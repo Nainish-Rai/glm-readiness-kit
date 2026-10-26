@@ -1,0 +1,23 @@
+schema_version: 1
+id: FP-003
+title: "text fingerprint: random-string completions vs the stored reference (Hamming-kernel MMD)"
+category: fingerprint
+severity: major
+kind: fingerprint
+executor: text_probe
+executor_config:
+  concurrency: 4
+  temperature: 1.0
+  max_tokens: 128
+source:
+  urls: ["https://arxiv.org/abs/2410.20247"]
+modes: [nonstream]
+repeats: 6
+opt_in: true
+request:
+  messages: []
+expect:
+  default:
+    - {check: text_distribution_vs_reference, alpha: 0.01, permutations: 1999, seed: 20261026, min_samples: 30, length: 64}
+tags: [host-quality, fingerprint]
+notes: Strings are compared character by character (first 64 characters); no tokenizer is assumed.

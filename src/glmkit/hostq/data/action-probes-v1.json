@@ -1,0 +1,252 @@
+{
+ "name": "action-probes",
+ "version": 1,
+ "description": "Ambiguous agentic prompts with five tools; the first tool call is the sample (AgentProv style).",
+ "tools": [
+  {
+   "name": "read_file",
+   "description": "Read a file from the workspace.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "path": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "path"
+    ]
+   }
+  },
+  {
+   "name": "search_code",
+   "description": "Search the codebase for a text or regex pattern.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "query": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "query"
+    ]
+   }
+  },
+  {
+   "name": "run_shell",
+   "description": "Run a shell command in the workspace and return its output.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "command": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "command"
+    ]
+   }
+  },
+  {
+   "name": "edit_file",
+   "description": "Replace text in a file.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "path": {
+      "type": "string"
+     },
+     "old": {
+      "type": "string"
+     },
+     "new": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "path",
+     "old",
+     "new"
+    ]
+   }
+  },
+  {
+   "name": "ask_user",
+   "description": "Ask the user a clarifying question.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "question": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "question"
+    ]
+   }
+  }
+ ],
+ "prompts": [
+  {
+   "id": "a00",
+   "prompt": "The checkout test fails in CI but passes locally. Work out why."
+  },
+  {
+   "id": "a01",
+   "prompt": "Our API returns 500 for some users after the last deploy. Start investigating."
+  },
+  {
+   "id": "a02",
+   "prompt": "Someone said the retry logic in the uploader is wrong. Take a look."
+  },
+  {
+   "id": "a03",
+   "prompt": "Make the config loader faster."
+  },
+  {
+   "id": "a04",
+   "prompt": "I think there is a memory leak in the worker. Find it."
+  },
+  {
+   "id": "a05",
+   "prompt": "Rename the helper that parses dates so the name is clearer."
+  },
+  {
+   "id": "a06",
+   "prompt": "The README mentions an env var that no longer exists. Sort it out."
+  },
+  {
+   "id": "a07",
+   "prompt": "Why is the build so slow today?"
+  },
+  {
+   "id": "a08",
+   "prompt": "Add input validation to the signup form."
+  },
+  {
+   "id": "a09",
+   "prompt": "A customer reports duplicated invoices. What is going on?"
+  },
+  {
+   "id": "a10",
+   "prompt": "Clean up the unused imports in the billing module."
+  },
+  {
+   "id": "a11",
+   "prompt": "Check whether the new dependency is actually used anywhere."
+  },
+  {
+   "id": "a12",
+   "prompt": "The cron job did not run last night. Diagnose."
+  },
+  {
+   "id": "a13",
+   "prompt": "Update the changelog for the release."
+  },
+  {
+   "id": "a14",
+   "prompt": "Tests in the auth package are flaky. Fix them."
+  },
+  {
+   "id": "a15",
+   "prompt": "I want to switch the logger to structured output."
+  },
+  {
+   "id": "a16",
+   "prompt": "There is a typo somewhere in the error messages. Find and fix it."
+  },
+  {
+   "id": "a17",
+   "prompt": "Can you confirm the database migration is safe to run?"
+  },
+  {
+   "id": "a18",
+   "prompt": "Improve the error handling around the payment call."
+  },
+  {
+   "id": "a19",
+   "prompt": "Where do we set the request timeout?"
+  },
+  {
+   "id": "a20",
+   "prompt": "The dashboard shows stale numbers. Look into it."
+  },
+  {
+   "id": "a21",
+   "prompt": "Prepare the repo for a Python 3.12 upgrade."
+  },
+  {
+   "id": "a22",
+   "prompt": "Our lint step started failing. Get it green."
+  },
+  {
+   "id": "a23",
+   "prompt": "Figure out what the nightly export actually does."
+  },
+  {
+   "id": "a24",
+   "prompt": "Remove the deprecated endpoint but do not break clients."
+  },
+  {
+   "id": "a25",
+   "prompt": "The websocket connection drops after exactly 60 seconds. Why?"
+  },
+  {
+   "id": "a26",
+   "prompt": "Write a quick script that counts TODO comments."
+  },
+  {
+   "id": "a27",
+   "prompt": "Double check that secrets are not logged anywhere."
+  },
+  {
+   "id": "a28",
+   "prompt": "The image resizer produces blurry thumbnails. Investigate."
+  },
+  {
+   "id": "a29",
+   "prompt": "Make sure the new feature flag defaults to off."
+  },
+  {
+   "id": "a30",
+   "prompt": "Review how sessions expire."
+  },
+  {
+   "id": "a31",
+   "prompt": "Port the old shell deploy script to something maintainable."
+  },
+  {
+   "id": "a32",
+   "prompt": "The search results ordering looks random. Fix it."
+  },
+  {
+   "id": "a33",
+   "prompt": "Is anything still using the legacy cache client?"
+  },
+  {
+   "id": "a34",
+   "prompt": "Find out why the container image is 2 GB."
+  },
+  {
+   "id": "a35",
+   "prompt": "Bump the version and tag the release."
+  },
+  {
+   "id": "a36",
+   "prompt": "A test asserts on a hard-coded date and now fails. Repair it."
+  },
+  {
+   "id": "a37",
+   "prompt": "Document how the queue consumer handles poison messages."
+  },
+  {
+   "id": "a38",
+   "prompt": "Users in Japan see garbled names. Help."
+  },
+  {
+   "id": "a39",
+   "prompt": "Speed up the slowest endpoint you can find."
+  }
+ ]
+}

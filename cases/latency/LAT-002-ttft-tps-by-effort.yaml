@@ -1,0 +1,23 @@
+schema_version: 1
+id: LAT-002
+title: "TTFT, decode tok/s and end-to-end tok/s at low / high / max effort"
+category: latency
+severity: info
+kind: statistical
+executor: latency_effort
+executor_config:
+  efforts: [low, high, max]
+source:
+  urls: ["https://artificialanalysis.ai/models/glm-5-3/providers"]
+modes: [stream]
+repeats: 10
+opt_in: true
+request:
+  messages: []
+  max_tokens: 1024
+  temperature: 0
+expect:
+  default:
+    - {check: latency_recorded}
+tags: [host-quality, latency]
+notes: Recorded, not scored. 429 responses are excluded from the statistics and counted.
