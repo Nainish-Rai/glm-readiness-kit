@@ -96,8 +96,9 @@ def run_loop(
     model: str = "glm-5.3",
     max_turns: int = 6,
     tools: list[dict[str, Any]] | None = None,
+    api_key: str = "sk-test-not-a-real-key",
 ) -> dict[str, Any]:
-    client = openai.OpenAI(base_url=base_url, api_key="sk-test-not-a-real-key", max_retries=0, default_headers=headers)
+    client = openai.OpenAI(base_url=base_url, api_key=api_key, max_retries=0, default_headers=headers)
     extra: dict[str, Any] = {"tool_stream": True} if stream else {}
     if thinking_disabled:
         extra["thinking"] = {"type": "disabled"}

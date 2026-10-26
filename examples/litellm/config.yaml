@@ -1,0 +1,14 @@
+# LiteLLM proxy config with the glmkit GLM bridge plugin.
+#   pip install 'glmkit[litellm]'
+#   export ZAI_API_KEY=...                       # never commit keys
+#   export GLMKIT_BRIDGE_OUT=./results           # the Bridge tab reads <out>/<run_id>/result.json
+#   litellm --config examples/litellm/config.yaml
+model_list:
+  - model_name: glm-5.3
+    litellm_params:
+      model: zai/glm-5.3
+      api_base: os.environ/ZAI_API_BASE          # https://api.z.ai/api/paas/v4 (default of the zai provider)
+      api_key: os.environ/ZAI_API_KEY
+
+litellm_settings:
+  callbacks: glmkit.bridge.litellm_plugin.plugin

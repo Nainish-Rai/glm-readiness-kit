@@ -71,6 +71,7 @@ class BridgePage(Page):
                 "started_at": env.started_at.isoformat(),
                 "upstream": (env.targets[0].profile if env.targets else None),
                 "flavor": env.config.get("flavor"),
+                "source": env.config.get("source") or "proxy",
                 "log_content": bool(env.config.get("log_content")),
             }
             for it in env.items:
@@ -86,6 +87,7 @@ class BridgePage(Page):
                         "title": it.title,
                         "request_id": d.get("request_id"),
                         "upstream": d.get("upstream"),
+                        "source": d.get("source") or env.config.get("source") or "proxy",
                         "before": d.get("before"),
                         "after": d.get("after"),
                         "ok": bool(d.get("ok", True)),

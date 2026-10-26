@@ -39,3 +39,16 @@ jobs:
       - run: uv run glmkit report build results/ -o site/
       - run: npm install --prefix tools/site-smoke --no-audit --no-fund
       - run: CHROME_PATH="$(command -v google-chrome)" node tools/site-smoke/smoke.mjs site/index.html
+
+  litellm:
+    # Real LiteLLM proxy (version pinned in uv.lock, run in its own uv env) with the glmkit plugin in front of mock
+    # GLM servers; default routing and LITELLM_RUST=1. Excluded from the default pytest run by the `litellm` marker.
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - run: uv sync --locked
+      - run: uv run pytest -m litellm
