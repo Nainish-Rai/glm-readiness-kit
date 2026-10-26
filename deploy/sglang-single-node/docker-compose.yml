@@ -1,0 +1,43 @@
+# Reference only: single-node SGLang for GLM-5.3 on 8 x H200 (FP8, EAGLE-style MTP, parsers).
+# Config and docs, never applied by the kit. Validate with `docker compose -f <this file> config`.
+# Source: https://docs.sglang.io/cookbook/autoregressive/GLM/GLM-5.3.md (read 2026-10-26).
+name: glm-sglang
+services:
+  sglang:
+    # Pinned: tag plus index digest (read from Docker Hub 2026-10-26).
+    image: lmsysorg/sglang:v0.5.18@sha256:9e148f5ac788e856a06166bd6347a831831eb9fcfab4d1770874823a7c29a1a1
+    ipc: host
+    ports:
+      - "30000:30000"
+    environment:
+      HF_TOKEN: ${HF_TOKEN:-}
+    volumes:
+      - hf-cache:/root/.cache/huggingface
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 8
+              capabilities: [gpu]
+    command:
+      - python3
+      - -m
+      - sglang.launch_server
+      - --model-path=zai-org/GLM-5.3
+      - --served-model-name=glm-5.3
+      - --tp-size=8
+      - --mem-fraction-static=0.8
+      - --host=0.0.0.0
+      - --port=30000
+      - --speculative-algorithm=EAGLE
+      - --speculative-num-steps=5
+      - --speculative-eagle-topk=1
+      - --speculative-num-draft-tokens=6
+      # Parsers are pinned per engine. SGLang: glm47 tool calls, glm45 reasoning (differs from vLLM).
+      - --tool-call-parser=glm47
+      - --reasoning-parser=glm45
+    # Do not enable the IndexCache override: it is accuracy-lossy and excluded from evidence-grade runs.
+    restart: unless-stopped
+volumes:
+  hf-cache: {}

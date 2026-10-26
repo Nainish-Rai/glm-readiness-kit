@@ -1,0 +1,49 @@
+# Reference only: single-node vLLM for GLM-5.3 (FP8, MTP, tool + reasoning parsers) on 1 x 8 H200/H20.
+# Config and docs, never applied by the kit. Validate with `docker compose -f <this file> config`.
+# Sizing: `glmkit deploy size --gpu h200 --gpus 8 --context 128k --concurrency 64`.
+# Source: https://recipes.vllm.ai/zai-org/GLM-5.3 (read 2026-10-26).
+name: glm-vllm
+services:
+  vllm:
+    # Pinned: tag for readability, digest for immutability (index digest read from Docker Hub 2026-10-26).
+    image: vllm/vllm-openai:v0.28.0@sha256:61fc8a896b0a4fbbbdc063bc4b0dbc25ce98e02b5050c24aeb7830ac02039b14
+    ipc: host
+    ports:
+      - "8000:8000"
+    environment:
+      HF_TOKEN: ${HF_TOKEN:-}          # only if the model repo is gated for you; never commit a value
+      VLLM_API_KEY: ${VLLM_API_KEY:-}  # clients send it as a bearer token; set one outside a trusted network
+    volumes:
+      - hf-cache:/root/.cache/huggingface
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 8
+              capabilities: [gpu]
+    command:
+      - --model=zai-org/GLM-5.3
+      - --served-model-name=glm-5.3
+      - --tensor-parallel-size=8
+      - --kv-cache-dtype=fp8
+      - --gpu-memory-utilization=0.9
+      # Set from the calculator, never assume 1M on H200 (KV holds ~0.6M tokens at TP8).
+      - --max-model-len=131072
+      - --max-num-seqs=64
+      - --enable-prefix-caching
+      - --speculative-config.method=mtp
+      - --speculative-config.num_speculative_tokens=5
+      # Parsers are pinned per engine. vLLM: glm47 for both. Without them tool calls are never emitted.
+      - --tool-call-parser=glm47
+      - --reasoning-parser=glm47
+      - --enable-auto-tool-choice
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 20
+      start_period: 1800s   # 755 GB of weights take a while to load
+    restart: unless-stopped
+volumes:
+  hf-cache: {}
