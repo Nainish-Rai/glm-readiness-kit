@@ -1,6 +1,6 @@
 # 19 · Unify the Z.ai error taxonomy in the bridge
 
-Status: review · Type: AFK · Label: ready-for-agent · Branch: issue/19-unify-errors
+Status: done · Type: AFK · Label: ready-for-agent · Branch: issue/19-unify-errors
 
 ## What to build
 

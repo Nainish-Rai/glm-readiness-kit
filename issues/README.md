@@ -23,7 +23,7 @@ Statuses: `ready` → `in-progress` → `review` → `done` (or `blocked`). Labe
 | 16 | [Live verification run](16-live-verification.md) | HITL | 02, 03, 04, 05 | blocked |
 | 17 | [Public readiness report + launch](17-public-report.md) | HITL | all | blocked |
 | 18 | [Unify the price table](18-unify-prices.md) | AFK | 10, 12, 14 | done |
-| 19 | [Unify the Z.ai error taxonomy in the bridge](19-unify-errors.md) | AFK | 03, 06, 07, 08, 09 | in-progress |
+| 19 | [Unify the Z.ai error taxonomy in the bridge](19-unify-errors.md) | AFK | 03, 06, 07, 08, 09 | done |
 
 ## Conventions every issue follows
 
