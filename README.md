@@ -7,7 +7,11 @@ off (evidence pack). Each step is one CLI command that writes JSON results, and 
 Everything runs against a deterministic mock GLM server first, and every check is shown to fail on a planted
 upstream bug before it touches a real endpoint.
 
-<!-- walkthrough-video -->
+**Watch the 77-second walkthrough:**
+
+[![glmkit walkthrough: conformance, bridge, eval, guard, cost, deploy and evidence on the mock GLM server](docs/media/walkthrough-poster.png)](docs/media/glmkit-walkthrough.mp4)
+
+<sub>Click the image to play ([MP4, 9.7 MB](docs/media/glmkit-walkthrough.mp4)). Everything shown runs against the deterministic mock server.</sub>
 
 **Status:** 17 of 19 issues done. Every result so far comes from the mock server; the live run against Z.ai
 endpoints ([#16](issues/16-live-verification.md)) is the next step and needs real API keys.
