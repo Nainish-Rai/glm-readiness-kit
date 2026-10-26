@@ -124,14 +124,36 @@ _SECONDS = re.compile(
 _RESET_AT = re.compile(
     r"(?:reset|resets|refresh\w*|available)\D{0,16}?(\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(?::\d{2})?)", re.I
 )
+_FLUSH = re.compile(r"next[_ ]flush[_ ]time\D{0,6}(\d{10,13}|\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(?::\d{2})?)", re.I)
 _UNIT = {"ms": 0.001, "s": 1, "m": 60, "h": 3600}
+
+#: Retry-After (seconds) a bridge sends for a retryable category when neither a header nor the message gives one.
+DEFAULT_RETRY_AFTER_S: dict[str, int] = {"rate_limit": 2, "overloaded": 10, "usage_limit": 300}
+
+
+def flush_seconds(message: str, now: datetime | None = None) -> float | None:
+    """Seconds until the ``next_flush_time`` in a message (epoch s/ms or ``YYYY-MM-DD HH:MM[:SS]``, UTC), or None."""
+    now = now or datetime.now(UTC)
+    m = _FLUSH.search(message)
+    if not m:
+        return None
+    raw = m.group(1)
+    try:
+        if raw.isdigit():
+            when = datetime.fromtimestamp(int(raw) / (1000 if len(raw) == 13 else 1), UTC)
+        else:
+            when = datetime.fromisoformat(raw.replace(" ", "T")).replace(tzinfo=UTC)
+    except (ValueError, OverflowError, OSError):
+        return None
+    return max(0.0, (when - now).total_seconds())
 
 
 def retry_after_hint(
     message: str | None = None, headers: Mapping[str, str] | None = None, *, now: datetime | None = None
 ) -> float | None:
     """Seconds to wait, from a ``Retry-After`` header (seconds or HTTP date) or from the message text
-    ("retry after 30 seconds", "resets at 2026-10-26 12:00:00"). None when there is no hint."""
+    ("retry after 30 seconds", "resets at 2026-10-26 12:00:00", "next_flush_time: 1793019600").
+    None when there is no hint."""
     now = now or datetime.now(UTC)
     if headers:
         h = {str(k).lower(): v for k, v in headers.items()}
@@ -146,6 +168,9 @@ def retry_after_hint(
                 except (TypeError, ValueError):
                     pass
     if message:
+        flush = flush_seconds(message, now)
+        if flush is not None:
+            return flush
         m = _RESET_AT.search(message)
         if m:
             try:

@@ -601,7 +601,7 @@ plan = core.plan_retry(ctx, sent, assistant_msg, failures)                 # Ret
 | Request rewriters | `core/pipeline.py`, `DEFAULT_REQUEST_REWRITERS` | `(ctx, body) -> body`: `rewrite_thinking` (disabled -> enabled + effort low on forced-thinking models), `rewrite_effort` (clamp to low/high/max), `rewrite_tool_schemas` (flatten top-level oneOf/anyOf), `rewrite_reasoning_replay` (verbatim / rename / strip). Add a fix = add a function to the tuple passed as `request_rewriters=` |
 | Response side | `core/toolcalls.py::fix_call`, `core/jsonrepair.py`, `core/schema.py` | Repairs single quotes, trailing commas, fences, double-encoding, truncation; maps flattened-schema args back to one branch; validates against the original schema. Never substitutes `{}` (only when the arguments are empty and the schema accepts `{}`) |
 | `StreamRewriter` | `core/stream.py` | Text/reasoning pass through live and in order. Tool-call deltas are buffered per `index` and emitted once, repaired, before the finish chunk. `rw.needs_retry` / `rw.failures` / `rw.assistant_message`, then `rw.resolve(calls)` or `rw.fail()` |
-| `ErrorClassifier` | `core/errors.py` | Protocol `classify(status, body, headers) -> ClassifiedError`. `TableErrorClassifier` holds the research/02-bridge.md table (1302, 1305, 1308/1316-1318 with `next_flush_time`, 1310, 1313, 1113/1309/1311/1314/1315, 1210, 1261). To be reconciled with issue 03's taxonomy: implement the protocol on top of it and pass `classifier=` |
+| `ErrorClassifier` | `core/errors.py` | Protocol `classify(status, body, headers) -> ClassifiedError`. `TableErrorClassifier` has no table of its own: it adapts `glmkit.zai_errors.classify()` (section 12) to `ClassifiedError` (`kind` = canonical category, `status` = `suggested_http`, `Retry-After` from the header, the message or `next_flush_time`, else `DEFAULT_RETRY_AFTER_S[category]`). `tests/test_one_error_table.py` fails if another module maps Z.ai codes. Pass `classifier=` to replace it |
 | `RetryPolicy` | `core/retry.py` | Protocol `plan_after_tool_failure(request, assistant_message, failures, attempts_so_far) -> RetryPlan | None`. `ParseErrorRetry` (max 1) appends the failed turn plus one `tool` message per failed call with the parse error |
 | Fix events | `core/events.py`, `FIX_TITLES` | `ctx.emit(fix_id, before, after, details=, content=)`. `before`/`after` are short summaries; raw values go to `content` and are dropped unless `FixEmitter(log_content=True)` |
 | Middleware hook | `core/middleware.py` | Subclass `BridgeMiddleware`; methods may be async: `before_request(ctx, body)` (runs after the rewriters; return a body or `Reject(status, message, code, retry_after_s, fix_id)`), `after_response`, `on_stream_event(ctx, event) -> [events] | Reject`, `on_error`, `on_finish(ctx, usage)` for spend accounting. Pass `middleware=[...]` to `BridgeCore` / `ProxyConfig`. Per-call state: `ctx.extras` |
@@ -683,9 +683,11 @@ info.retry_strategy  # "backoff" | "wait_for_reset" | "none"
 info.upstream_http   # status Z.ai documents (1113 arrives as 429)
 info.suggested_http  # status a bridge should emit so clients behave (1113 -> 402, 1211 -> 404, 1305 -> 503)
 info.retry_after_s   # seconds from a Retry-After header or the message ("retry after 30 seconds",
-                     # "resets at 2026-10-26 13:00:00"), else None
+                     # "resets at 2026-10-26 13:00:00", "next_flush_time: <epoch|datetime>"), else None
 ```
 
+- This is the only Z.ai code table in the package (`tests/test_one_error_table.py`). `DEFAULT_RETRY_AFTER_S` gives the
+  bridge's fallback `Retry-After` per category (rate_limit 2, overloaded 10, usage_limit 300).
 - Every code in the research table is in `TABLE` (1000-1005, 1113, 1200, 1210-1215, 1220-1222, 1230, 1234, 1261,
   1301, 1302, 1305, 1308-1321). `classify(None, http_status=500)` is a documented server error.
 - A code outside the table is never dropped: `known=False`, `category="unknown"`, the code is kept, and

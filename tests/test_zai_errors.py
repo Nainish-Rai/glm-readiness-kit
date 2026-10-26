@@ -90,3 +90,12 @@ def test_retry_after_hints() -> None:
 @pytest.mark.parametrize("row", table_rows(), ids=lambda r: r["code"])
 def test_rows_are_complete(row) -> None:
     assert row["title"] and row["meaning"] and 400 <= row["suggested_http"] < 600
+
+
+def test_next_flush_time_is_a_retry_after_hint() -> None:
+    from datetime import UTC, datetime
+
+    now = datetime(2026, 10, 26, 12, 0, 0, tzinfo=UTC)
+    assert retry_after_hint("limit, next_flush_time: 2026-10-26 13:00:00", now=now) == 3600
+    assert retry_after_hint("next_flush_time=1793019600", now=now) == 3600
+    assert retry_after_hint("next_flush_time: 1793019600000", now=now) == 3600
