@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import hashlib
 import json
 import logging
 import time
@@ -58,6 +59,20 @@ def _error(
     return JSONResponse(
         {"error": {"message": message, "type": etype, "code": code}}, status_code=status, headers=headers
     )
+
+
+def caller_identity(request: Request) -> dict[str, str]:
+    """Who is calling, for middleware (the guard): agent / session from ``x-glmkit-agent`` / ``x-glmkit-session``,
+    and a short fingerprint of the credential (never the credential itself)."""
+    out: dict[str, str] = {}
+    if request.headers.get("x-glmkit-agent"):
+        out["agent"] = request.headers["x-glmkit-agent"][:64]
+    if request.headers.get("x-glmkit-session"):
+        out["session_id"] = request.headers["x-glmkit-session"][:64]
+    cred = request.headers.get("authorization") or request.headers.get("x-api-key")
+    if cred:
+        out["key_id"] = "key-" + hashlib.sha256(cred.encode()).hexdigest()[:10]
+    return out
 
 
 def sse(obj: Any) -> bytes:
@@ -190,6 +205,7 @@ def create_app(
         except ValueError:
             return _error(400, "Request body must be a JSON object.", "bridge_bad_request", "invalid_request_error")
         ctx = core.new_context(body)
+        ctx.extras.update(caller_identity(request))
         rec = RequestRecord(
             request_id=ctx.request_id,
             ts=datetime.now(UTC).isoformat(),
