@@ -38,7 +38,7 @@ from starlette.routing import BaseRoute, Route
 from glmkit.bridge.anthropic import rewriters as rw
 from glmkit.bridge.anthropic import translate as tr
 from glmkit.bridge.anthropic import websearch as ws
-from glmkit.bridge.anthropic.tokens import Features, TokenCalibrator, features
+from glmkit.bridge.anthropic.tokens import Features, TokenCalibrator, features, replay_preserved
 from glmkit.bridge.core import Reject, RewriteContext
 from glmkit.bridge.core.errors import ClassifiedError
 from glmkit.bridge.core.pipeline import rewrite_reasoning_replay
@@ -262,13 +262,17 @@ class AnthropicBridge:
             raise _Fail(await self._upstream_error(c, up), up.status_code)
         return up
 
+    def _features(self, body: dict[str, Any]) -> Features:
+        wire = "anthropic_messages" if self.native else "openai_chat"
+        return features(body, replay_preserved(body, wire=wire, default=self.cfg.upstream.preserved_thinking))
+
     # ------------------------------------------------------------------------------------ request side
     def _prepare(self, c: _Call, body: dict[str, Any]) -> dict[str, Any]:
         sent = copy.deepcopy(body)
         chain = [*rw.COMMON, *(rw.NATIVE if self.native else ()), *self.opt.extra_rewriters]
         for fn in chain:
             sent = fn(c.ctx, sent)
-        c.ctx.extras["est_input"] = self.opt.calibrator.estimate_features(sent.get("model"), features(sent))
+        c.ctx.extras["est_input"] = self.opt.calibrator.estimate_features(sent.get("model"), self._features(sent))
         return sent
 
     async def _wire_request(self, c: _Call, sent: dict[str, Any]) -> dict[str, Any]:
@@ -309,7 +313,7 @@ class AnthropicBridge:
 
     async def _complete(self, c: _Call, sent: dict[str, Any]) -> dict[str, Any]:
         """One non-stream upstream call -> an Anthropic message (all fixes applied). Raises ``_Fail``."""
-        feats = features(sent)
+        feats = self._features(sent)
         wire = await self._wire_request(c, sent)
         up = await self._post(c, wire)
         try:
@@ -447,9 +451,9 @@ class AnthropicBridge:
         wire = await self._wire_request(c, sent)
         up = await self._post(c, wire, stream=True)
         gen = (
-            self._native_stream(c, up, features(sent))
+            self._native_stream(c, up, self._features(sent))
             if self.native
-            else self._openai_stream(c, wire, up, features(sent))
+            else self._openai_stream(c, wire, up, self._features(sent))
         )
         return StreamingResponse(
             gen,
@@ -696,7 +700,7 @@ class AnthropicBridge:
         except ValueError:
             return self._plain_error(None, 400, "messages: Field required")
         c = self._call(request, body)
-        feats = features(body)
+        feats = self._features(body)
         coef = self.opt.calibrator.coefficients(body.get("model"))
         n = self.opt.calibrator.estimate_features(body.get("model"), feats)
         c.ctx.emit(

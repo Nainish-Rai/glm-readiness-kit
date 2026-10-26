@@ -44,7 +44,7 @@ def _clen(text: Any) -> int:
     return len(json.dumps(text, ensure_ascii=False)) - 2 if isinstance(text, str) else 0
 
 
-def _block_chars(b: Any) -> tuple[int, int]:
+def _block_chars(b: Any, preserved: bool = True) -> tuple[int, int]:
     """(characters, extra tokens) of one content block."""
     if isinstance(b, str):
         return _clen(b), 0
@@ -53,15 +53,15 @@ def _block_chars(b: Any) -> tuple[int, int]:
     t = b.get("type")
     if t == "text":
         return _clen(b.get("text", "")), 0
-    if t == "thinking":
-        return _clen(b.get("thinking", "")), 0
+    if t == "thinking":  # replayed reasoning only counts when the upstream keeps it (clear_thinking false)
+        return (_clen(b.get("thinking", "")) if preserved else 0), 0
     if t in ("tool_use", "server_tool_use"):
         return len(b.get("name", "")) + len(_dump(b.get("input") or {})), 0
     if t == "tool_result":
         c = b.get("content")
         if not isinstance(c, list):
             return _clen(block_text(c)), 0
-        parts = [_block_chars(x) for x in c]
+        parts = [_block_chars(x, preserved) for x in c]
         return sum(p[0] for p in parts), sum(p[1] for p in parts)
     if t == "image":
         return 0, IMAGE_TOKENS
@@ -71,8 +71,12 @@ def _block_chars(b: Any) -> tuple[int, int]:
 Features = tuple[float, int, int, int, int]  # content tokens, messages, structured blocks, tool definitions, 1
 
 
-def features(body: dict[str, Any]) -> Features:
-    """What a request costs, as (content tokens, message count, structured block count, tool count)."""
+def features(body: dict[str, Any], preserved: bool = False) -> Features:
+    """What a request costs, as (content tokens, messages, structured blocks, tool definitions, 1).
+
+    ``preserved`` says whether the upstream counts replayed reasoning: GLM drops earlier turns' reasoning unless
+    ``clear_thinking`` is false (THINK-004: prompt_tokens are smaller with the default), so by default thinking blocks
+    in the history add nothing. See ``replay_preserved``."""
     chars = _clen(block_text(body.get("system")))
     extra = 0
     tools = [t for t in body.get("tools") or [] if isinstance(t, dict)]
@@ -90,16 +94,29 @@ def features(body: dict[str, Any]) -> Features:
             chars += _clen(c)
             continue
         for b in c or []:
-            n, e = _block_chars(b)
+            n, e = _block_chars(b, preserved)
             chars += n
             extra += e
-            blocks += isinstance(b, dict) and b.get("type") in (
-                "tool_use",
-                "tool_result",
-                "thinking",
-                "server_tool_use",
-            )
+            kinds = ("tool_use", "tool_result", "server_tool_use") + (("thinking",) if preserved else ())
+            blocks += isinstance(b, dict) and b.get("type") in kinds
     return chars / CHARS_PER_TOKEN + extra, len(msgs), blocks, len(tools), 1
+
+
+def replay_preserved(body: dict[str, Any], *, wire: str, default: bool) -> bool:
+    """Will the upstream see this request's replayed reasoning as prompt tokens?
+
+    * an explicit ``thinking.clear_thinking`` in the body decides (false = preserved);
+    * on the translated (OpenAI) wire the bridge sets ``clear_thinking: false`` itself whenever thinking is enabled
+      or adaptive, so the reasoning is replayed and counted;
+    * otherwise the endpoint default: preserved on the Coding Plan class, cleared on the standard API
+      (``UpstreamProfile.preserved_thinking``).
+    """
+    th = body.get("thinking")
+    if isinstance(th, dict) and "clear_thinking" in th:
+        return th["clear_thinking"] is False
+    if wire == "openai_chat" and isinstance(th, dict) and str(th.get("type", "")).lower() in ("enabled", "adaptive"):
+        return True
+    return default
 
 
 def estimate_raw(body: dict[str, Any]) -> int:

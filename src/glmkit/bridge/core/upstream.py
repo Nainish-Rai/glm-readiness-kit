@@ -36,6 +36,8 @@ class UpstreamProfile:
     # reasoning replay: how assistant-message reasoning must be sent upstream
     reasoning_replay: ReplayMode = "verbatim"
     reasoning_field: str = "reasoning_content"  # target name for "verbatim" / "rename"
+    # replayed reasoning counts as prompt tokens by default (Coding Plan: preserved thinking on; standard API: cleared)
+    preserved_thinking: bool = False
     # schemas
     flatten_oneof_tools: bool = True
     notes: str = ""
@@ -74,6 +76,7 @@ UPSTREAMS: dict[str, UpstreamProfile] = {
             forced_thinking_models=_FORCED,
             disabled_thinking="passthrough",
             effort_policy="passthrough",
+            preserved_thinking=True,
             notes="devpack docs: thinking.type false|disabled|none|off -> low; effort mapped server-side",
         ),
         UpstreamProfile(

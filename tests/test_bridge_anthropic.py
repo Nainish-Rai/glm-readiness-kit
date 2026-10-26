@@ -353,3 +353,59 @@ def test_arguments_that_stay_broken_are_an_error_not_an_empty_object(make: Any) 
     rs = httpx.post(bridge.url + "/v1/messages", json={**body, "stream": True})
     assert rs.status_code == 200 and "event: error" in rs.text and "message_stop" not in rs.text
     assert [e.fix_id for e in app.state.emitter.events].count("tool-args-unrepaired") == 2
+
+
+def _reasoning_history() -> list[dict[str, Any]]:
+    msgs: list[dict[str, Any]] = [{"role": "user", "content": "start " * 50}]
+    for i in range(6):
+        msgs.append(
+            {
+                "role": "assistant",
+                "content": [
+                    {"type": "thinking", "thinking": f"Long private reasoning {i}. " * 60, "signature": "s"},
+                    {"type": "text", "text": f"answer {i} " * 20},
+                ],
+            }
+        )
+        msgs.append({"role": "user", "content": f"next question {i} " * 20})
+    return msgs
+
+
+@pytest.mark.parametrize("kind", KINDS)
+@pytest.mark.parametrize("clear_thinking", [None, True, False], ids=["default", "clear", "preserved"])
+def test_count_tokens_models_how_replayed_reasoning_is_counted(make: Any, kind: str, clear_thinking: Any) -> None:
+    """THINK-004: GLM drops earlier turns' reasoning unless clear_thinking is false; the estimator must follow."""
+    mock, bridge, _app = make(kind)
+    for n, count in [(40, 1), (400, 3), (2000, 2), (900, 6), (3000, 1), (200, 8)]:  # calibrate on real usage first
+        turns = [{"role": "user" if i % 2 == 0 else "assistant", "content": "w " * n} for i in range(count * 2 - 1)]
+        httpx.post(bridge.url + "/v1/messages", json={"model": MODEL, "max_tokens": 8, "messages": turns})
+    thinking: dict[str, Any] = {"type": "enabled"}
+    if clear_thinking is not None:
+        thinking["clear_thinking"] = clear_thinking
+    body = {"model": MODEL, "messages": _reasoning_history(), "thinking": thinking}
+    want = httpx.post(mock.url + DIRECT_PATH + "/v1/messages/count_tokens", json=body).json()["input_tokens"]
+    if kind == "openai" and clear_thinking is None:  # the translated request sets clear_thinking false itself
+        want = httpx.post(
+            mock.url + DIRECT_PATH + "/v1/messages/count_tokens",
+            json={**body, "thinking": {**thinking, "clear_thinking": False}},
+        ).json()["input_tokens"]
+    got = httpx.post(bridge.url + "/v1/messages/count_tokens", json=body).json()["input_tokens"]
+    assert abs(got - want) / want <= CONTEXT_TOLERANCE, f"{got} vs {want}"
+
+
+def test_preserved_reasoning_changes_the_estimate_and_plan_defaults_to_preserved() -> None:
+    from glmkit.bridge.anthropic.tokens import estimate_raw, features, replay_preserved
+    from glmkit.bridge.core import get_upstream
+
+    body = {"model": MODEL, "messages": _reasoning_history()}
+    assert features(body, True)[0] > features(body, False)[0] * 1.5
+    assert estimate_raw(body) > 0
+    api, plan = get_upstream("zai"), get_upstream("zai-plan")
+    assert not replay_preserved(body, wire="anthropic_messages", default=api.preserved_thinking)
+    assert replay_preserved(body, wire="anthropic_messages", default=plan.preserved_thinking)
+    assert replay_preserved(
+        {**body, "thinking": {"type": "enabled", "clear_thinking": False}}, wire="anthropic_messages", default=False
+    )
+    assert not replay_preserved(
+        {**body, "thinking": {"type": "enabled", "clear_thinking": True}}, wire="openai_chat", default=True
+    )
