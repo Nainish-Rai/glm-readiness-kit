@@ -1,6 +1,6 @@
 # 02 · Conformance: tool-call cases + provider scorecard
 
-Status: review · Type: AFK · Label: ready-for-agent · Branch: issue/02-conform-tools
+Status: done · Type: AFK · Label: ready-for-agent · Branch: issue/02-conform-tools
 
 ## What to build
 

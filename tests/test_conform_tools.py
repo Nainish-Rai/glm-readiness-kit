@@ -114,7 +114,7 @@ def test_k2vv_command_reports_f1_and_schema_accuracy(tmp_path) -> None:
     )
     assert res.exit_code == 0, res.output
     scores = json.loads(res.output.split("\n{", 1)[0] if res.output.startswith("{") is False else res.output)
-    assert scores["n"] == 20 and scores["f1"] == pytest.approx(0.9524, abs=1e-3) and scores["schema_accuracy"] == 1.0
+    assert scores["n"] == 20 and scores["f1"] == pytest.approx(1.0, abs=1e-3) and scores["schema_accuracy"] == 1.0
     bad = runner.invoke(
         build_app(),
         [

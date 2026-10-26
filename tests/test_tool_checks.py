@@ -19,7 +19,7 @@ from glmkit.contracts.evidence import (
     NormToolCall,
 )
 from glmkit.contracts.profile import get_profile
-from tests.test_checks import CASE, CASES
+from tests.test_checks import CASE
 
 FLAT = {
     "type": "function",
@@ -112,7 +112,7 @@ ROWS = [
         {"f1_gte": 0.5},
     ),
 ]
-CASES.extend(ROWS)  # the coverage test in test_checks.py reads this list when it runs
+CHECK_CASES = ROWS  # collected by the coverage test in test_checks.py
 
 
 def run(name, exchange, **params) -> str:

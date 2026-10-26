@@ -33,6 +33,18 @@ def _named(req: CanonRequest, text: str) -> list[Tool]:
     return [t for _, t in sorted(hits, key=lambda h: h[0])]
 
 
+def _relevant(req: CanonRequest, text: str) -> list[Tool]:
+    """Tools whose name parts or longer description words appear in the text ("weather" -> get_weather)."""
+    words = set(re.findall(r"[a-z]{4,}", text.lower()))
+    hits = []
+    for t in req.tools:
+        vocab = {w for w in re.split(r"[^a-z]+", (t.name or "").lower()) if len(w) >= 4}
+        vocab |= set(re.findall(r"[a-z]{5,}", (t.description or "").lower()))
+        if vocab & words:
+            hits.append(t)
+    return hits
+
+
 def exact_arguments(tool: Tool, text: str, *, only_tool: bool) -> dict[str, Any] | None:
     """The JSON object the prompt says to pass to ``tool`` (``<name> ... exactly these arguments: {...}``)."""
     dec = json.JSONDecoder()
@@ -58,7 +70,8 @@ def plan_calls(req: CanonRequest, text: str) -> list[tuple[Tool, dict[str, Any] 
     named = _named(req, text)
     if named:
         return [(t, exact_arguments(t, text, only_tool=len(named) == 1)) for t in named]
-    if req.tool_choice != "required" and QUESTION.match(text):
+    relevant = _relevant(req, text)
+    if req.tool_choice != "required" and QUESTION.match(text) and not relevant:
         return []
-    tool = req.tools[0]
+    tool = relevant[0] if relevant else req.tools[0]
     return [(tool, exact_arguments(tool, text, only_tool=True))]
