@@ -106,3 +106,26 @@ Messages), Protocol column, top fixes listing the `anthropic-*` ids, KPI strip f
 Unverified: behaviour against the real Z.ai Anthropic endpoint and real Claude Code (mock-only; assumed shapes of
 Z.ai's 500s are the mock's, see issue 16); count_tokens accuracy against a real GLM tokenizer (the calibrator learns it
 from usage, the 5% result is against the mock's accounting); the `clear_thinking:false` replay flag is untested upstream.
+
+### Follow-up after merging main (context meter 5.4% under, and the per-defect tests)
+
+Cause: issue 04's mock counts replayed `reasoning` toward prompt tokens only when the request carries
+`thinking.clear_thinking: false` (THINK-004: the default clears earlier turns' reasoning). The estimator counted every
+`thinking` block in the history, so on the Claude Code session (thinking blocks replayed, no clear_thinking) it was off,
+and the refit constants could not follow because the difference depends on the request, not on a constant.
+
+Fix: the estimator models it. `tokens.replay_preserved(body, wire, default)` decides whether the upstream will count
+replayed reasoning: an explicit `thinking.clear_thinking` wins; on the translated OpenAI wire the bridge itself sets
+`clear_thinking: false` when thinking is enabled/adaptive, so it counts; otherwise the endpoint default, which is the new
+`UpstreamProfile.preserved_thinking` (True for `zai-plan`, False elsewhere, per the docs: preserved thinking on by default
+on the Coding Plan, off on the standard API). `features(body, preserved)` leaves thinking text and thinking blocks out of
+the count when they are not preserved. Tolerance stays 5%. New tests: `test_count_tokens_models_how_replayed_reasoning_is_counted`
+(default / clear / preserved, both upstreams, against the mock's own count_tokens) and
+`test_preserved_reasoning_changes_the_estimate_and_plan_defaults_to_preserved`.
+
+The four failing `test_each_defect_alone...` tests (anthropic upstream) failed for the same reason, through the session's
+context-meter step; they pass with the fix.
+
+Results on the merged branch: `uv run ruff check` clean, full `uv run pytest -q` all passed (no F), proof
+`anthropic_proof.py` exit 0: context-meter `count_tokens=5455 billed=5566 off=2.0%` (Anthropic upstream) and
+`5430 vs 5587, 2.8%` (OpenAI upstream); direct run still 70.0% off.
