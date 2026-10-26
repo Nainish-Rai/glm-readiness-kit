@@ -1,0 +1,35 @@
+schema_version: 1
+id: WIRE-015
+title: "plain stream: ends with [DONE] / message_stop, one finish event, one role, usage on the last chunk"
+category: wire/stream
+severity: critical
+kind: deterministic
+applies_to:
+  models: [glm-5.3, glm-5.3-flash]
+  protocols: [openai_chat, anthropic_messages]
+source:
+  issues: ["ollama/ollama#18926"]
+  urls: ["https://docs.z.ai/guides/capabilities/streaming.md"]
+  spec: ["https://docs.z.ai/guides/capabilities/streaming.md"]
+  first_seen: 2026-10-26
+modes: [stream]
+request:
+  messages:
+    - {role: user, content: "Reply OK"}
+  max_tokens: 256
+expect:
+  default:
+    - {check: http_status, equals: 200}
+    - {check: no_internal_leak}
+    - {check: sse_terminates}
+    - {check: wire_stream_role_once}
+    - {check: wire_stream_usage_final}
+    - {check: finish_reason, in: [stop]}
+  third_party:
+    - {check: wire_stream_usage_final, soft: true}
+  self_hosted:
+    - {check: wire_stream_usage_final, soft: true}
+notes: >
+  OpenAI path: `stream_options.include_usage` is sent, usage must be on the last data chunk. Anthropic path:
+  the last message_delta carries usage. Planted defects: stream-malformed (double finish, no usage, repeated
+  role) and hanging-stream.

@@ -618,3 +618,52 @@ and at shutdown. The **Bridge** dashboard tab (`report/pages/bridge.py|js`) read
 errors need no defect: the mock's default behaviour on the `api` class already rejects them.
 
 **Proof**: `uv run python tools/bridge-proof/proof.py --out results/bridge-demo` (OpenAI SDK loop, direct vs bridged).
+## 12. Error taxonomy (`glmkit.zai_errors`, slice 03)
+
+One small module maps a Z.ai business code (table in research/01-conformance.md §2.5) to what a caller needs to
+decide. Slice 06 (bridge) reuses it; the Errors dashboard tab and the `wire_*` checks use it too.
+
+```python
+from glmkit.zai_errors import classify, retry_after_hint, table_rows, TABLE, CATEGORIES
+
+info = classify("1302", http_status=429, message="Retry after 2 seconds", headers={"retry-after": "2"})
+info.code            # "1302" (integer codes are normalised to strings; None when the body has no code)
+info.known           # True when the code is in the documented table
+info.category        # auth | billing | permission | usage_limit | rate_limit | overloaded | invalid_request |
+                     # not_found | context_length | content_safety | server | unknown
+info.retryable       # same request may succeed later without a change
+info.retry_strategy  # "backoff" | "wait_for_reset" | "none"
+info.upstream_http   # status Z.ai documents (1113 arrives as 429)
+info.suggested_http  # status a bridge should emit so clients behave (1113 -> 402, 1211 -> 404, 1305 -> 503)
+info.retry_after_s   # seconds from a Retry-After header or the message ("retry after 30 seconds",
+                     # "resets at 2026-10-26 13:00:00"), else None
+```
+
+- Every code in the research table is in `TABLE` (1000-1005, 1113, 1200, 1210-1215, 1220-1222, 1230, 1234, 1261,
+  1301, 1302, 1305, 1308-1321). `classify(None, http_status=500)` is a documented server error.
+- A code outside the table is never dropped: `known=False`, `category="unknown"`, the code is kept, and
+  retryability follows the HTTP status (429 and 5xx retry with backoff, anything else does not).
+- `info.to_dict()` and `table_rows()` give JSON-ready dicts. `is_throttle(code)` is true for the rate-limit,
+  overloaded and usage-window categories.
+- Conformance only reads codes through `NormalizedResponse.error_code`; `wire_error_code_known` fails on an
+  undocumented code and the Errors tab groups failures by `category` (plus two non-taxonomy buckets: `transport`
+  for no HTTP answer and `contract` for a bad answer without an error code).
+
+### Slice 03 additions to the shared runtime (all optional or additive)
+
+- **Mock behaviour** (`mock/engine.py`): a prompt over 1M estimated tokens is `400/1261`; `response_format:
+  {type: json_object}` makes the reply a JSON object; the request header `X-GLMKit-Require-Auth: 1` makes the mock
+  enforce credentials for that request (none: 401/1001; the value `glmkit-invalid-key`: 401/1000), which is what
+  the `auth_probe` executor uses. Real hosts ignore that header.
+- **Executors** (`conform/executors/wire.py`): `wire_single` (padding, case-level stream timeout), `effort_sweep`,
+  `paired_stream`, `auth_probe`, `corpora`, `burst`, `thinking_roundtrip`. `ProbeClient` there is a `GLMClient` with
+  per-request credentials and header removal.
+- **Checks** (`conform/checks/wire.py`): all named `wire_*`. A check that reads a specific exchange of a
+  multi-request executor takes `exchange: <label>` (labels: `auth:<probe>`, `cross:<probe>`, `effort:<lvl>#<n>`,
+  `corpus:<name>` / `ref:<name>`, `burst:<i>`, `turn1` / `turn2`, `nonstream` / `stream`).
+- **Token reference** for ANTH-004: the host's `count_tokens` answer, or a JSON file `{"corpus": tokens}` named by
+  `$GLMKIT_TOKEN_REFERENCE` (measured on the official API for the same model).
+- **Cases carry `$ref` only inside lists or free-form dicts** (`executor_config`): the case JSON schema does not
+  allow `{$ref}` in place of `tools`, so shared tool lists are written inline.
+- **Tests**: a slice may keep its check regression rows in its own module as `CHECK_CASES`; the meta test in
+  `tests/test_checks.py` collects them.

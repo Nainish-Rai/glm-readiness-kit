@@ -1,0 +1,46 @@
+schema_version: 1
+id: WIRE-004
+title: "reasoning_effort medium / xhigh / none on glm-5.3: rejected 400 (1210/1214) on the API, mapped on the Plan"
+category: wire/errors
+severity: major
+kind: deterministic
+applies_to:
+  models: [glm-5.3, glm-5.3-flash]
+  protocols: [openai_chat, anthropic_messages]
+source:
+  issues: []
+  urls: ["https://docs.z.ai/guides/capabilities/thinking.md"]
+  spec: ["https://docs.z.ai/guides/capabilities/thinking.md", "https://docs.z.ai/guides/llm/glm-5.3.md"]
+  first_seen: 2026-10-26
+modes: [nonstream]
+request:
+  messages:
+    - {role: user, content: "Reply OK"}
+  max_tokens: 256
+  params:
+    thinking: {type: enabled}
+    reasoning_effort: medium
+variants:
+  - {id: xhigh, request: {params: {reasoning_effort: xhigh}}}
+  - {id: none, request: {params: {reasoning_effort: none}}}
+expect:
+  default:
+    - {check: no_5xx}
+    - {check: no_internal_leak}
+  # standard API: "any other input will result in an error"
+  api:
+    - {check: http_status, equals: 400}
+    - {check: error_code, in: ["1210", "1214"]}
+    - {check: error_shape}
+    - {check: wire_error_code_known}
+  # Coding Plan: none/minimal/low -> low, medium/high -> high, xhigh/max -> max; the request continues
+  plan:
+    - {check: http_status, equals: 200}
+    - {check: reasoning_present}
+  third_party:
+    - {check: http_status, in: [200, 400], soft: true}
+  self_hosted:
+    - {check: http_status, in: [200, 400], soft: true}
+notes: >
+  Third-party and self-hosted hosts may accept or reject; only a 5xx or a leaked traceback is a hard failure.
+  The 1214 code is ASSUMED (the docs only say "an error"). Planted defect: invalid-effort-accepted.

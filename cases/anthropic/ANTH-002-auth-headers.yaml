@@ -1,0 +1,52 @@
+schema_version: 1
+id: ANTH-002
+title: "Anthropic path accepts x-api-key and Authorization: Bearer, tolerates a missing anthropic-version, answers 401 otherwise"
+category: anthropic/auth
+severity: major
+kind: deterministic
+executor: auth_probe
+executor_config:
+  probes:
+    - {label: x-api-key, auth: x-api-key}
+    - {label: bearer, auth: bearer}
+    - {label: no-version, auth: x-api-key, drop: [anthropic-version]}
+    - {label: missing, auth: none}
+    - {label: invalid, auth: invalid}
+applies_to:
+  models: [glm-5.3, glm-5.3-flash]
+  protocols: [anthropic_messages]
+source:
+  issues: []
+  urls: ["https://docs.z.ai/devpack/tool/claude.md"]
+  spec: ["https://docs.z.ai/devpack/tool/claude.md"]
+  first_seen: 2026-10-26
+modes: [nonstream]
+request:
+  messages:
+    - {role: user, content: "Reply OK"}
+  max_tokens: 32
+expect:
+  default:
+    - {check: wire_no_5xx_any}
+    - {check: wire_no_leak_any}
+    - {check: http_status, exchange: "auth:x-api-key", equals: 200}
+    - {check: http_status, exchange: "auth:bearer", equals: 200}
+    - {check: http_status, exchange: "auth:no-version", equals: 200}
+  api:
+    - {check: http_status, exchange: "auth:missing", equals: 401}
+    - {check: error_code, exchange: "auth:missing", in: ["1000", "1001"]}
+    - {check: http_status, exchange: "auth:invalid", equals: 401}
+    - {check: error_code, exchange: "auth:invalid", in: ["1000", "1001"]}
+  plan:
+    - {check: http_status, exchange: "auth:missing", equals: 401}
+    - {check: error_code, exchange: "auth:missing", in: ["1000", "1001"]}
+    - {check: http_status, exchange: "auth:invalid", equals: 401}
+    - {check: error_code, exchange: "auth:invalid", in: ["1000", "1001"]}
+  third_party:
+    - {check: http_status, exchange: "auth:invalid", in: [401, 403], soft: true}
+  self_hosted:
+    - {check: http_status, exchange: "auth:invalid", in: [200, 401, 403], soft: true}
+notes: >
+  Each probe is a separate request with its own credentials. The mock enforces them when the probe sends
+  X-GLMKit-Require-Auth: 1 (ignored by real hosts). Probes need a working key for a real target; on a keyless
+  target a placeholder key is sent. Planted defect: anthropic-bearer-rejected.

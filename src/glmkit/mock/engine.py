@@ -59,6 +59,9 @@ GLM52_EFFORT_MAP = {
 }
 MAX_OUTPUT_TOKENS = 131_072
 MAX_TOOLS = 128
+MAX_CONTEXT_TOKENS = 1_000_000  # 1M context window; a longer prompt is 400/1261
+INVALID_KEY = "glmkit-invalid-key"  # a credential the strict-auth probe uses; always 401/1000
+STRICT_AUTH_HEADER = "x-glmkit-require-auth"  # "1": enforce credentials on this request (AUTH-001, ANTH-002)
 
 
 def toks(s: str | None) -> int:
@@ -195,7 +198,8 @@ def _err(status: int, code: str | None, message: str, reason: str, atype: str = 
 
 def check_auth(ctx: MockContext) -> ErrorReply | None:
     want = ctx.config.require_key
-    if not want:
+    strict = ctx.headers.get(STRICT_AUTH_HEADER) == "1"
+    if not want and not strict:
         return None
     auth = ctx.headers.get("authorization", "")
     got = auth[7:] if auth.lower().startswith("bearer ") else ctx.headers.get("x-api-key")
@@ -203,7 +207,7 @@ def check_auth(ctx: MockContext) -> ErrorReply | None:
         return _err(
             401, "1001", "Authentication parameter not received in Header", "auth_missing", "authentication_error"
         )
-    if got != want:
+    if got == INVALID_KEY or (want and got != want):
         return _err(401, "1000", "Authentication Failed", "auth_failed", "authentication_error")
     return None
 
@@ -232,6 +236,8 @@ def validate(ctx: MockContext) -> ErrorReply | None:
         return _err(400, "1214", "The parameter max_tokens is invalid.", "bad_max_tokens")
     if len(req.tools) > MAX_TOOLS:
         return _err(400, "1214", "The parameter tools is invalid: at most 128 functions.", "too_many_tools")
+    if toks(req.system) + sum(toks(m.text) for m in req.messages) > MAX_CONTEXT_TOKENS:
+        return _err(400, "1261", "Prompt exceeds the max length of the model.", "context_overflow")
 
     spec = MODELS[model]
     plan = ctx.endpoint_class == "plan"
@@ -428,6 +434,9 @@ def generate(ctx: MockContext) -> Reply:
         content = f"Done. The tool returned: {str(result)[:120]}"
     else:
         content = _answer(user_text)
+        rf = ctx.body.get("response_format") if isinstance(ctx.body, dict) else None
+        if isinstance(rf, dict) and rf.get("type") == "json_object":  # JSON mode: the content is a JSON object
+            content = json.dumps({"answer": content}, ensure_ascii=False)
     for s in req.stop:
         if content and s in content:
             content = content[: content.index(s)]

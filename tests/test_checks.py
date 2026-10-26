@@ -82,8 +82,22 @@ def test_check_passes_and_fails(name, good, gp, bad, bp) -> None:
     assert run(name, bad, **bp) == "fail"
 
 
+def other_slices_tested() -> set[str]:
+    """Slices keep their check rows in their own test module as ``CHECK_CASES`` (rows start with the check name)."""
+    import importlib
+    import pkgutil
+
+    import tests
+
+    names: set[str] = set()
+    for m in pkgutil.iter_modules(tests.__path__):
+        if m.name.startswith("test_") and m.name != "test_checks":
+            names |= {c[0] for c in getattr(importlib.import_module(f"tests.{m.name}"), "CHECK_CASES", [])}
+    return names
+
+
 def test_every_registered_per_attempt_check_has_a_regression_test() -> None:
-    tested = {c[0] for c in CASES}
+    tested = {c[0] for c in CASES} | other_slices_tested()
     per_attempt = {n for n, d in discover().items() if not d.aggregate and d.module.startswith("glmkit.conform.checks")}
     assert per_attempt <= tested, f"untested checks: {sorted(per_attempt - tested)}"
 

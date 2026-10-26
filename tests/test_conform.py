@@ -24,7 +24,7 @@ def statuses(env) -> dict[str, str]:
 
 async def test_wire_cases_pass_on_clean_mock_both_protocols(tmp_path) -> None:
     for name in ("mock", "mock-anthropic"):
-        out = await run_conformance(get_profile(name), RunOptions(patterns=["WIRE-00*"], out_dir=tmp_path))
+        out = await run_conformance(get_profile(name), RunOptions(patterns=["WIRE-001", "WIRE-002"], out_dir=tmp_path))
         assert statuses(out.envelope) == {
             "WIRE-001[nonstream]": "pass",
             "WIRE-002[nonstream]": "pass",
@@ -39,7 +39,8 @@ async def test_wire_cases_pass_on_clean_mock_both_protocols(tmp_path) -> None:
 
 async def test_wire_001_fails_on_planted_defect_with_traceback_evidence(tmp_path) -> None:
     out = await run_conformance(
-        get_profile("mock"), RunOptions(patterns=["WIRE-00*"], mock_defects=["forced-thinking-500"], out_dir=tmp_path)
+        get_profile("mock"),
+        RunOptions(patterns=["WIRE-001", "WIRE-002"], mock_defects=["forced-thinking-500"], out_dir=tmp_path),
     )
     env = out.envelope
     assert statuses(env)["WIRE-001[nonstream]"] == "fail" and statuses(env)["WIRE-002[stream]"] == "pass"
@@ -69,7 +70,7 @@ async def test_plan_class_soft_expectations(tmp_path) -> None:
 
 async def test_applicability_and_mode_filter(mock_server, tmp_path) -> None:
     p = profile_at("mock", mock_server).model_copy(update={"model": "glm-5.2"})
-    out = await run_conformance(p, RunOptions(patterns=["WIRE-00*"], write=False))
+    out = await run_conformance(p, RunOptions(patterns=["WIRE-001", "WIRE-002"], write=False))
     assert {i.status for i in out.envelope.items} == {"skip"} and out.envelope.verdict == "incomplete"
     out = await run_conformance(get_profile("mock"), RunOptions(patterns=["WIRE-002"], modes=["stream"], write=False))
     assert statuses(out.envelope) == {"WIRE-002[stream]": "pass"}

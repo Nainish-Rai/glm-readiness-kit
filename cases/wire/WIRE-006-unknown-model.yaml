@@ -1,0 +1,39 @@
+schema_version: 1
+id: WIRE-006
+title: "unknown model glm-9.9 is rejected 4xx (1211) and never answered by another model"
+category: wire/errors
+severity: critical
+kind: deterministic
+applies_to:
+  protocols: [openai_chat, anthropic_messages]
+source:
+  issues: ["zai-org/zai-coding-plugins#15"]
+  urls: ["https://github.com/zai-org/zai-coding-plugins/issues/15"]
+  spec: ["https://docs.z.ai/api-reference/api-code.md"]
+  first_seen: 2026-10-26
+modes: [nonstream]
+request:
+  model: glm-9.9
+  messages:
+    - {role: user, content: "Reply OK"}
+  max_tokens: 32
+expect:
+  default:
+    - {check: no_5xx}
+    - {check: no_internal_leak}
+    - {check: wire_unknown_model_rejected}
+    - {check: model_field_equals_request}
+  api:
+    - {check: error_code, in: ["1211"]}
+    - {check: error_shape}
+    - {check: wire_error_code_known}
+  plan:
+    - {check: error_code, in: ["1211"]}
+    - {check: error_shape}
+  third_party:
+    - {check: error_shape, require_code: false, soft: true}
+  self_hosted:
+    - {check: error_shape, require_code: false, soft: true}
+notes: >
+  A host that falls back to a default model hides a typo and bills the wrong model. If a host does answer 200,
+  the response model must at least equal the request model. Planted defect: silent-model-fallback.

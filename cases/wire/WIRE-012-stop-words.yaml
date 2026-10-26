@@ -1,0 +1,30 @@
+schema_version: 1
+id: WIRE-012
+title: "stop words: one and two stop sequences are honoured or rejected with 1214, never ignored"
+category: wire
+severity: minor
+kind: deterministic
+applies_to:
+  models: [glm-5.3, glm-5.3-flash]
+  protocols: [openai_chat, anthropic_messages]
+source:
+  issues: []
+  urls: ["https://docs.z.ai/api-reference/llm/chat-completion.md"]
+  spec: ["https://docs.z.ai/api-reference/llm/chat-completion.md"]
+  first_seen: 2026-10-26
+modes: [nonstream]
+request:
+  messages:
+    - {role: user, content: "Count out loud: alpha beta gamma END delta epsilon"}
+  max_tokens: 512
+  stop: [END]
+variants:
+  - {id: two-words, request: {stop: [END, epsilon]}}
+expect:
+  default:
+    - {check: no_5xx}
+    - {check: no_internal_leak}
+    - {check: wire_stop_honoured}
+notes: >
+  Docs say one stop word is supported (the schema allows four). A model may not print the stop word at all,
+  so the check only fails when a stop word is present in the answer. Planted defect: stop-words-ignored.

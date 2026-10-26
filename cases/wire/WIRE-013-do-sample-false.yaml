@@ -1,0 +1,28 @@
+schema_version: 1
+id: WIRE-013
+title: "do_sample false with temperature 1 returns the same answer on repeated requests"
+category: wire
+severity: minor
+kind: statistical
+applies_to:
+  models: [glm-5.3, glm-5.3-flash]
+  protocols: [openai_chat]
+source:
+  issues: []
+  urls: ["https://docs.z.ai/api-reference/llm/chat-completion.md"]
+  spec: ["https://docs.z.ai/api-reference/llm/chat-completion.md"]
+  first_seen: 2026-10-26
+modes: [nonstream]
+repeats: 5
+request:
+  messages:
+    - {role: user, content: "Name three primary colours in one short sentence."}
+  max_tokens: 1024
+  temperature: 1
+  params: {do_sample: false}
+expect:
+  default:
+    - {check: wire_outputs_identical}
+notes: >
+  Greedy decoding should repeat exactly. GPU non-determinism can break this on a healthy host, so treat a
+  failure as "check the host", not as proof of a bug. Planted defect: do-sample-ignored.

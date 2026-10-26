@@ -1,0 +1,36 @@
+schema_version: 1
+id: WIRE-008
+title: "Anthropic body without max_tokens is a 400 invalid_request_error, never a 500"
+category: wire/errors
+severity: critical
+kind: deterministic
+applies_to:
+  models: [glm-5.3, glm-5.3-flash]
+  protocols: [anthropic_messages]
+source:
+  issues: ["zai-org/zai-coding-plugins#15"]
+  urls: ["https://github.com/zai-org/zai-coding-plugins/issues/15"]
+  spec: ["https://docs.z.ai/devpack/tool/claude.md"]
+  first_seen: 2026-10-26
+modes: [nonstream, stream]
+request:
+  messages:
+    - {role: user, content: "Reply OK"}
+  omit: [max_tokens]
+expect:
+  default:
+    - {check: no_5xx}
+    - {check: no_internal_leak}
+  api:
+    - {check: http_status, equals: 400}
+    - {check: wire_anthropic_error_shape, types: [invalid_request_error]}
+  plan:
+    - {check: http_status, equals: 400}
+    - {check: wire_anthropic_error_shape, types: [invalid_request_error]}
+  third_party:
+    - {check: http_status, in: [200, 400], soft: true}
+  self_hosted:
+    - {check: http_status, in: [200, 400], soft: true}
+notes: >
+  Anthropic Messages requires max_tokens. A host may also default it (200), which third-party and self-hosted
+  targets are allowed to do. Planted defect: anthropic-missing-max-tokens-500.

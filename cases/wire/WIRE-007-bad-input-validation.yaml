@@ -1,0 +1,43 @@
+schema_version: 1
+id: WIRE-007
+title: "bad input (no messages, temperature 2, top_p 0, max_tokens 200000, 129 tools) is a structured 4xx, never a 5xx or a traceback"
+category: wire/errors
+severity: critical
+kind: deterministic
+applies_to:
+  models: [glm-5.3, glm-5.3-flash]
+  protocols: [openai_chat, anthropic_messages]
+source:
+  issues: ["zai-org/zai-coding-plugins#15"]
+  urls: ["https://github.com/zai-org/zai-coding-plugins/issues/15"]
+  spec: ["https://docs.z.ai/api-reference/api-code.md", "https://docs.z.ai/api-reference/llm/chat-completion.md"]
+  first_seen: 2026-10-26
+modes: [nonstream]
+request:
+  messages:
+    - {role: user, content: "Reply OK"}
+  max_tokens: 32
+  omit: [messages]
+variants:
+  - {id: temperature-2, request: {omit: [], temperature: 2}}
+  - {id: top-p-0, request: {omit: [], top_p: 0}}
+  - {id: max-tokens-200000, request: {omit: [], max_tokens: 200000}}
+  - {id: tools-129, request: {omit: [], tools: [{name: tool_000, parameters: {type: object}}, {name: tool_001, parameters: {type: object}}, {name: tool_002, parameters: {type: object}}, {name: tool_003, parameters: {type: object}}, {name: tool_004, parameters: {type: object}}, {name: tool_005, parameters: {type: object}}, {name: tool_006, parameters: {type: object}}, {name: tool_007, parameters: {type: object}}, {name: tool_008, parameters: {type: object}}, {name: tool_009, parameters: {type: object}}, {name: tool_010, parameters: {type: object}}, {name: tool_011, parameters: {type: object}}, {name: tool_012, parameters: {type: object}}, {name: tool_013, parameters: {type: object}}, {name: tool_014, parameters: {type: object}}, {name: tool_015, parameters: {type: object}}, {name: tool_016, parameters: {type: object}}, {name: tool_017, parameters: {type: object}}, {name: tool_018, parameters: {type: object}}, {name: tool_019, parameters: {type: object}}, {name: tool_020, parameters: {type: object}}, {name: tool_021, parameters: {type: object}}, {name: tool_022, parameters: {type: object}}, {name: tool_023, parameters: {type: object}}, {name: tool_024, parameters: {type: object}}, {name: tool_025, parameters: {type: object}}, {name: tool_026, parameters: {type: object}}, {name: tool_027, parameters: {type: object}}, {name: tool_028, parameters: {type: object}}, {name: tool_029, parameters: {type: object}}, {name: tool_030, parameters: {type: object}}, {name: tool_031, parameters: {type: object}}, {name: tool_032, parameters: {type: object}}, {name: tool_033, parameters: {type: object}}, {name: tool_034, parameters: {type: object}}, {name: tool_035, parameters: {type: object}}, {name: tool_036, parameters: {type: object}}, {name: tool_037, parameters: {type: object}}, {name: tool_038, parameters: {type: object}}, {name: tool_039, parameters: {type: object}}, {name: tool_040, parameters: {type: object}}, {name: tool_041, parameters: {type: object}}, {name: tool_042, parameters: {type: object}}, {name: tool_043, parameters: {type: object}}, {name: tool_044, parameters: {type: object}}, {name: tool_045, parameters: {type: object}}, {name: tool_046, parameters: {type: object}}, {name: tool_047, parameters: {type: object}}, {name: tool_048, parameters: {type: object}}, {name: tool_049, parameters: {type: object}}, {name: tool_050, parameters: {type: object}}, {name: tool_051, parameters: {type: object}}, {name: tool_052, parameters: {type: object}}, {name: tool_053, parameters: {type: object}}, {name: tool_054, parameters: {type: object}}, {name: tool_055, parameters: {type: object}}, {name: tool_056, parameters: {type: object}}, {name: tool_057, parameters: {type: object}}, {name: tool_058, parameters: {type: object}}, {name: tool_059, parameters: {type: object}}, {name: tool_060, parameters: {type: object}}, {name: tool_061, parameters: {type: object}}, {name: tool_062, parameters: {type: object}}, {name: tool_063, parameters: {type: object}}, {name: tool_064, parameters: {type: object}}, {name: tool_065, parameters: {type: object}}, {name: tool_066, parameters: {type: object}}, {name: tool_067, parameters: {type: object}}, {name: tool_068, parameters: {type: object}}, {name: tool_069, parameters: {type: object}}, {name: tool_070, parameters: {type: object}}, {name: tool_071, parameters: {type: object}}, {name: tool_072, parameters: {type: object}}, {name: tool_073, parameters: {type: object}}, {name: tool_074, parameters: {type: object}}, {name: tool_075, parameters: {type: object}}, {name: tool_076, parameters: {type: object}}, {name: tool_077, parameters: {type: object}}, {name: tool_078, parameters: {type: object}}, {name: tool_079, parameters: {type: object}}, {name: tool_080, parameters: {type: object}}, {name: tool_081, parameters: {type: object}}, {name: tool_082, parameters: {type: object}}, {name: tool_083, parameters: {type: object}}, {name: tool_084, parameters: {type: object}}, {name: tool_085, parameters: {type: object}}, {name: tool_086, parameters: {type: object}}, {name: tool_087, parameters: {type: object}}, {name: tool_088, parameters: {type: object}}, {name: tool_089, parameters: {type: object}}, {name: tool_090, parameters: {type: object}}, {name: tool_091, parameters: {type: object}}, {name: tool_092, parameters: {type: object}}, {name: tool_093, parameters: {type: object}}, {name: tool_094, parameters: {type: object}}, {name: tool_095, parameters: {type: object}}, {name: tool_096, parameters: {type: object}}, {name: tool_097, parameters: {type: object}}, {name: tool_098, parameters: {type: object}}, {name: tool_099, parameters: {type: object}}, {name: tool_100, parameters: {type: object}}, {name: tool_101, parameters: {type: object}}, {name: tool_102, parameters: {type: object}}, {name: tool_103, parameters: {type: object}}, {name: tool_104, parameters: {type: object}}, {name: tool_105, parameters: {type: object}}, {name: tool_106, parameters: {type: object}}, {name: tool_107, parameters: {type: object}}, {name: tool_108, parameters: {type: object}}, {name: tool_109, parameters: {type: object}}, {name: tool_110, parameters: {type: object}}, {name: tool_111, parameters: {type: object}}, {name: tool_112, parameters: {type: object}}, {name: tool_113, parameters: {type: object}}, {name: tool_114, parameters: {type: object}}, {name: tool_115, parameters: {type: object}}, {name: tool_116, parameters: {type: object}}, {name: tool_117, parameters: {type: object}}, {name: tool_118, parameters: {type: object}}, {name: tool_119, parameters: {type: object}}, {name: tool_120, parameters: {type: object}}, {name: tool_121, parameters: {type: object}}, {name: tool_122, parameters: {type: object}}, {name: tool_123, parameters: {type: object}}, {name: tool_124, parameters: {type: object}}, {name: tool_125, parameters: {type: object}}, {name: tool_126, parameters: {type: object}}, {name: tool_127, parameters: {type: object}}, {name: tool_128, parameters: {type: object}}]}}
+expect:
+  default:
+    - {check: no_5xx}
+    - {check: no_internal_leak}
+    - {check: http_status, gte: 400, lt: 500}
+    - {check: error_shape, require_code: false}
+  api:
+    - {check: error_code, matches: "^121[0-9]$"}
+    - {check: wire_error_code_known}
+  plan:
+    - {check: error_code, matches: "^121[0-9]$"}
+    - {check: wire_error_code_known}
+  third_party:
+    - {check: wire_error_code_known, soft: true}
+notes: >
+  The base case omits `messages`; each variant sets one invalid value instead. 121x = invalid parameter /
+  not received / invalid. Third-party hosts use their own codes, so the code check is soft there.
+  Planted defect: validation-500.

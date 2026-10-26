@@ -1,0 +1,52 @@
+[
+ {
+  "name": "json",
+  "unit": "{\"key\": \"value\", \"count\": 42, \"items\": [1, 2, 3], \"nested\": {\"ok\": true}},\n",
+  "repeat": 300
+ },
+ {
+  "name": "english",
+  "unit": "The quick brown fox jumps over the lazy dog while the committee reviews the quarterly report. ",
+  "repeat": 120
+ },
+ {
+  "name": "python",
+  "unit": "def add(a: int, b: int) -> int:\n    return a + b  # simple helper\n\n",
+  "repeat": 150
+ },
+ {
+  "name": "cjk",
+  "unit": "今天天气很好，我们一起去公园散步，然后在咖啡馆讨论项目的进展情况。",
+  "repeat": 150
+ },
+ {
+  "name": "special",
+  "unit": "!@#$%^&*()_+-=[]{};':\",./<>?\\| ~` ",
+  "repeat": 250
+ },
+ {
+  "name": "markdown",
+  "unit": "| Column A | Column B |\n|---|---|\n| **bold** | `code` |\n\n## Heading\n- item one\n- item two\n",
+  "repeat": 120
+ },
+ {
+  "name": "logs",
+  "unit": "2026-10-26T12:00:01Z INFO  request_id=a1b2c3 path=/v1/messages status=200 latency_ms=412\n",
+  "repeat": 150
+ },
+ {
+  "name": "base64",
+  "unit": "U29tZSBiYXNlNjQgZW5jb2RlZCBwYXlsb2FkIHRoYXQgbG9va3MgbGlrZSBub2lzZSB0byBhIHRva2VuaXplcg==",
+  "repeat": 150
+ },
+ {
+  "name": "numbers",
+  "unit": "3.14159, 2.71828, 1.41421, 1234567890, 0.000123, -42, 9007199254740993\n",
+  "repeat": 200
+ },
+ {
+  "name": "mixed",
+  "unit": "Привет, мир! こんにちは世界 مرحبا بالعالم 🚀 naïve café — “quotes” …\n",
+  "repeat": 150
+ }
+]

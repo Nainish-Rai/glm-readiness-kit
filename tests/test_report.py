@@ -16,9 +16,10 @@ from glmkit.report.registry import Page, discover, register_page, unregister_pag
 @pytest.fixture
 async def results(tmp_path):
     out = tmp_path / "results"
-    await run_conformance(get_profile("mock"), RunOptions(patterns=["WIRE-00*"], out_dir=out))
+    await run_conformance(get_profile("mock"), RunOptions(patterns=["WIRE-001", "WIRE-002"], out_dir=out))
     await run_conformance(
-        get_profile("mock"), RunOptions(patterns=["WIRE-00*"], mock_defects=["forced-thinking-500"], out_dir=out)
+        get_profile("mock"),
+        RunOptions(patterns=["WIRE-001", "WIRE-002"], mock_defects=["forced-thinking-500"], out_dir=out),
     )
     return out
 

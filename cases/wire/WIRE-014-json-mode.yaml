@@ -1,0 +1,29 @@
+schema_version: 1
+id: WIRE-014
+title: "response_format json_object returns a parseable JSON object on 20 of 20 runs"
+category: wire
+severity: major
+kind: statistical
+applies_to:
+  models: [glm-5.3, glm-5.3-flash]
+  protocols: [openai_chat]
+source:
+  issues: []
+  urls: ["https://docs.z.ai/guides/capabilities/struct-output.md"]
+  spec: ["https://docs.z.ai/guides/capabilities/struct-output.md"]
+  first_seen: 2026-10-26
+modes: [nonstream]
+repeats: 20
+request:
+  messages:
+    - {role: user, content: "Return a JSON object with the keys name and age for a fictional person."}
+  max_tokens: 2048
+  params: {response_format: {type: json_object}}
+expect:
+  default:
+    - {check: http_status, equals: 200}
+    - {check: wire_json_parseable}
+    - {check: pass_rate, gte: 1.0}
+notes: >
+  The content is parsed as received: a markdown fence or a sentence before the JSON fails. Planted defect:
+  json-mode-fenced.

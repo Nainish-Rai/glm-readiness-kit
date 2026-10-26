@@ -1,0 +1,38 @@
+schema_version: 1
+id: WIRE-009
+title: "history with tool_use.input sent as an array is a structured answer (200/4xx), never a 5xx"
+category: wire/errors
+severity: critical
+kind: deterministic
+applies_to:
+  models: [glm-5.3, glm-5.3-flash]
+  protocols: [anthropic_messages]
+source:
+  issues: ["zai-org/zai-coding-plugins#14", "zai-org/zai-coding-plugins#15"]
+  urls:
+    - https://github.com/zai-org/zai-coding-plugins/issues/14
+    - https://github.com/zai-org/zai-coding-plugins/issues/15
+  spec: ["https://docs.anthropic.com/en/api/messages"]
+  first_seen: 2026-10-26
+modes: [nonstream]
+request:
+  messages:
+    - {role: user, content: "What is the weather in Paris?"}
+    - role: assistant
+      content: null
+      tool_calls:
+        - {id: call_1, type: function, function: {name: get_weather, arguments: "[\"Paris\"]"}}
+    - {role: tool, tool_call_id: call_1, content: "sunny, 18 C"}
+  tools: [{name: get_weather, description: "Current weather for a city", parameters: {type: object, properties: {city: {type: string}}, required: [city]}}, {name: get_time, description: "Current time in a city", parameters: {type: object, properties: {city: {type: string}}, required: [city]}}]
+  max_tokens: 256
+expect:
+  default:
+    - {check: no_5xx}
+    - {check: no_internal_leak}
+    - {check: http_status, in: [200, 400, 422]}
+    - {check: error_shape, require_code: false}
+  third_party:
+    - {check: wire_anthropic_error_shape, soft: true}
+notes: >
+  Anthropic defines tool_use.input as an object. Some clients send an array; a host may answer or reject it,
+  but must not crash converting it. Planted defect: tool-use-input-array-500.
