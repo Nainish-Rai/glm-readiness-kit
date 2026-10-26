@@ -1,6 +1,6 @@
 # 12 · Cost and cache forensics
 
-Status: review · Type: AFK · Label: ready-for-agent · Branch: issue/12-cost-forensics
+Status: done · Type: AFK · Label: ready-for-agent · Branch: issue/12-cost-forensics
 
 ## What to build
 
