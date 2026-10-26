@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "vllm-stack values (reference subset used by deploy/vllm-single-node/values.yaml)",
+  "type": "object",
+  "required": ["servingEngineSpec", "routerSpec"],
+  "properties": {
+    "chart": {"type": "object", "required": ["name", "version"], "properties": {"name": {"const": "vllm-stack"}, "version": {"type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$"}}},
+    "servingEngineSpec": {
+      "type": "object",
+      "required": ["modelSpec"],
+      "properties": {
+        "runtimeClassName": {"type": "string"},
+        "modelSpec": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["name", "repository", "tag", "modelURL", "replicaCount", "requestGPU", "vllmConfig"],
+            "properties": {
+              "name": {"type": "string", "pattern": "^[a-z0-9-]+$"},
+              "repository": {"type": "string"},
+              "tag": {"type": "string", "pattern": "^v\\d+\\.\\d+\\.\\d+$"},
+              "imageDigest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+              "modelURL": {"type": "string"},
+              "replicaCount": {"type": "integer", "minimum": 1},
+              "requestCPU": {"type": "integer", "minimum": 1},
+              "requestMemory": {"type": "string"},
+              "requestGPU": {"type": "integer", "minimum": 1},
+              "pvcStorage": {"type": "string"},
+              "pvcAccessMode": {"type": "array", "items": {"type": "string"}},
+              "vllmConfig": {
+                "type": "object",
+                "required": ["tensorParallelSize", "maxModelLen", "extraArgs"],
+                "properties": {
+                  "tensorParallelSize": {"type": "integer", "minimum": 1},
+                  "maxModelLen": {"type": "integer", "minimum": 1024},
+                  "maxNumSeqs": {"type": "integer", "minimum": 1},
+                  "gpuMemoryUtilization": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+                  "enablePrefixCaching": {"type": "boolean"},
+                  "dtype": {"type": "string"},
+                  "extraArgs": {"type": "array", "items": {"type": "string", "pattern": "^--"}}
+                },
+                "additionalProperties": false
+              },
+              "hf_token": {"type": "object", "required": ["secretName", "secretKey"], "properties": {"secretName": {"type": "string"}, "secretKey": {"type": "string"}}, "additionalProperties": false}
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "routerSpec": {"type": "object", "required": ["repository", "tag"], "properties": {"repository": {"type": "string"}, "tag": {"type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$"}, "replicaCount": {"type": "integer"}, "routingLogic": {"enum": ["roundrobin", "session"]}, "sessionKey": {"type": "string"}}, "additionalProperties": false}
+  },
+  "additionalProperties": false
+}

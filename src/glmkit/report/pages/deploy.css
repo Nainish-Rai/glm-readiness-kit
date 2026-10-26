@@ -1,0 +1,16 @@
+/* Deploy tab. Tokens only. */
+.dp-form { display: grid; gap: var(--space-3); }
+.dp-field { display: grid; gap: 4px; min-width: 0; }
+.dp-field > span { font-size: var(--text-meta); color: var(--fg-meta); }
+.dp-field input, .dp-field select { height: 30px; min-width: 0; width: 100%; background: var(--surface-well); border: 1px solid var(--edge); border-radius: var(--radius-2); padding: 0 var(--space-2); color: var(--fg-emph); font-size: 12.5px; }
+.dp-field input:focus-visible, .dp-field select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.dp-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); }
+.dp-pills { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.dp-reasons { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--space-2); font-size: 12px; color: var(--fg-body); }
+.dp-reasons li { border-left: 2px solid var(--err); padding-left: var(--space-2); overflow-wrap: anywhere; }
+.dp-reasons li.warn { border-left-color: var(--warn); }
+.dp-note { color: var(--fg-meta); font-size: var(--text-meta); margin: 0; overflow-wrap: anywhere; }
+.dp-break { font-size: 13px; color: var(--fg-emph); margin: 0 0 var(--space-3); overflow-wrap: anywhere; }
+.dp-src a { color: var(--accent); overflow-wrap: anywhere; }
+.dp-stack { display: grid; gap: var(--space-4); min-width: 0; }
+@media (max-width: 520px) { .dp-row { grid-template-columns: minmax(0, 1fr); } }

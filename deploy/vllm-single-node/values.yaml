@@ -1,0 +1,53 @@
+# Reference only: Helm values for the vllm-project/production-stack chart (vllm-stack), single 8 x H200 node.
+# Config and docs, never `helm install`ed by the kit.
+#   helm repo add vllm https://vllm-project.github.io/production-stack
+#   helm lint vllm/vllm-stack --version 0.1.13 -f values.yaml
+# The values layout is written from the chart documentation and was NOT linted against the chart here (the helm
+# binary was not available); `tests/test_deploy_reference.py` checks it against deploy/schemas/vllm-stack-values.schema.json.
+# Sources: https://github.com/vllm-project/production-stack (chart 0.1.13, read 2026-10-26);
+#          https://recipes.vllm.ai/zai-org/GLM-5.3 (read 2026-10-26).
+chart:
+  name: vllm-stack
+  version: 0.1.13
+
+servingEngineSpec:
+  runtimeClassName: nvidia
+  modelSpec:
+    - name: glm-5-3
+      repository: vllm/vllm-openai
+      tag: v0.28.0
+      imageDigest: sha256:61fc8a896b0a4fbbbdc063bc4b0dbc25ce98e02b5050c24aeb7830ac02039b14
+      modelURL: zai-org/GLM-5.3
+      replicaCount: 1
+      requestCPU: 32
+      requestMemory: 512Gi
+      requestGPU: 8
+      pvcStorage: 1Ti
+      pvcAccessMode:
+        - ReadWriteOnce
+      vllmConfig:
+        tensorParallelSize: 8
+        maxModelLen: 131072
+        maxNumSeqs: 64
+        gpuMemoryUtilization: 0.9
+        enablePrefixCaching: true
+        dtype: auto
+        extraArgs:
+          - --served-model-name=glm-5.3
+          - --kv-cache-dtype=fp8
+          - --speculative-config.method=mtp
+          - --speculative-config.num_speculative_tokens=5
+          # Parsers pinned per engine. vLLM: glm47 for both.
+          - --tool-call-parser=glm47
+          - --reasoning-parser=glm47
+          - --enable-auto-tool-choice
+      hf_token:
+        secretName: hf-token       # create this Secret yourself; the kit never holds a token
+        secretKey: token
+
+routerSpec:
+  repository: lmcache/lmstack-router
+  tag: "0.1.13"
+  replicaCount: 1
+  routingLogic: session
+  sessionKey: x-user-id

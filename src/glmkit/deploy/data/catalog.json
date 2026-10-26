@@ -1,0 +1,87 @@
+{
+  "_note": "Every price, spec and calibration point carries a source URL and the date it was read. Enforced by tests/test_deploy_sizing.py. Provider prices change weekly: re-pull before quoting.",
+  "model": {
+    "id": "glm-5.3",
+    "active_params": 40e9,
+    "active_params_source": {"url": "https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-zai-glm-5-3.html", "date": "2026-10-26"},
+    "kv_layout": "mla",
+    "unsupported": {
+      "glm-5.3-flash": "GLM-5.3-Flash is not a plain MLA layout (qk_rope_head_dim 0, k_conv1d module); the KV formula must not be reused without reading its modeling code (research/04 section 1.1)."
+    }
+  },
+  "checkpoints": {
+    "fp8": {"source": "manifest", "url": "https://huggingface.co/api/models/zai-org/GLM-5.3", "date": "2026-10-26", "bytes_per_param_note": "native FP8 e4m3 block-128; norms, gates, embeddings stay BF16/F32"},
+    "bf16": {"gb": 1507.0, "url": "https://huggingface.co/api/models/zai-org/GLM-5.3-BF16", "date": "2026-10-26", "note": "HF usedStorage of zai-org/GLM-5.3-BF16"},
+    "nvfp4": {"gb": 465.0, "url": "https://recipes.vllm.ai/zai-org/GLM-5.3", "date": "2026-10-26", "note": "Inferact/GLM-5.3-NVFP4, approximate per the vLLM recipe"}
+  },
+  "kv_dtype_bytes": {"fp8": 1, "bf16": 2},
+  "gpus": {
+    "h100": {"title": "H100 SXM 80 GB", "hbm_gb": 80, "hbm_tb_s": 3.35, "fp8_tflops": 1979, "usd_hr": 4.50,
+      "price_source": {"url": "https://nebius.com/prices", "date": "2026-10-26", "label": "Nebius on-demand HGX H100"},
+      "spec_source": {"url": "https://www.nvidia.com/en-us/data-center/h100/", "date": "2026-10-26", "verified": false}},
+    "h200": {"title": "H200 SXM 141 GB", "hbm_gb": 141, "hbm_tb_s": 4.8, "fp8_tflops": 1979, "usd_hr": 5.40,
+      "price_source": {"url": "https://nebius.com/prices", "date": "2026-10-26", "label": "Nebius on-demand HGX H200"},
+      "spec_source": {"url": "https://www.nvidia.com/en-us/data-center/h200/", "date": "2026-10-26", "verified": false}},
+    "h200-discounted": {"title": "H200 SXM 141 GB at llm-d blog rate", "hbm_gb": 141, "hbm_tb_s": 4.8, "fp8_tflops": 1979, "usd_hr": 2.71,
+      "price_source": {"url": "https://llm-d.ai/blog/serving-glm-5-2-agentic-workloads-on-llm-d", "date": "2026-07-22", "label": "rate the llm-d authors assumed; best case"},
+      "spec_source": {"url": "https://www.nvidia.com/en-us/data-center/h200/", "date": "2026-10-26", "verified": false}},
+    "b200": {"title": "B200 180 GB", "hbm_gb": 180, "hbm_tb_s": 8.0, "fp8_tflops": 4500, "usd_hr": 8.50,
+      "price_source": {"url": "https://nebius.com/prices", "date": "2026-10-26", "label": "Nebius on-demand HGX B200"},
+      "spec_source": {"url": "https://www.nvidia.com/en-us/data-center/dgx-b200/", "date": "2026-10-26", "verified": false}},
+    "b300": {"title": "B300 288 GB", "hbm_gb": 288, "hbm_tb_s": 8.0, "fp8_tflops": 4500, "usd_hr": 9.50,
+      "price_source": {"url": "https://nebius.com/prices", "date": "2026-10-26", "label": "Nebius on-demand HGX B300"},
+      "spec_source": {"url": "https://www.nvidia.com/en-us/data-center/gb300-nvl72/", "date": "2026-10-26", "verified": false}}
+  },
+  "apis": {
+    "zai": {"title": "Z.ai API list", "in_usd_m": 1.40, "cached_usd_m": null, "out_usd_m": 4.40,
+      "source": {"url": "https://anotherwrapper.com/tools/llm-pricing/glm-5.3", "date": "2026-10-26", "secondary": true}},
+    "mistral": {"title": "Mistral La Plateforme", "in_usd_m": 1.40, "cached_usd_m": 0.14, "out_usd_m": 4.40,
+      "source": {"url": "https://docs.mistral.ai/inference/pricing", "date": "2026-10-26"}},
+    "mistral-eu": {"title": "Mistral EU regional (1.1x)", "in_usd_m": 1.54, "cached_usd_m": 0.154, "out_usd_m": 4.84,
+      "source": {"url": "https://docs.mistral.ai/inference/regional-inference", "date": "2026-10-26"}},
+    "bedrock-global": {"title": "Bedrock global profile", "in_usd_m": 1.68, "cached_usd_m": 0.31, "out_usd_m": 5.28,
+      "source": {"url": "https://custom.typingmind.com/tools/estimate-llm-usage-costs/amazon-bedrock/us-zai-glm-5-3", "date": "2026-10-26", "secondary": true}},
+    "crusoe": {"title": "Crusoe managed inference", "in_usd_m": 1.40, "cached_usd_m": 0.26, "out_usd_m": 4.40,
+      "source": {"url": "https://crusoe.ai/cloud/pricing", "date": "2026-10-26", "secondary": true}},
+    "scaleway": {"title": "Scaleway Generative APIs", "in_usd_m": 2.01, "cached_usd_m": null, "out_usd_m": 6.15,
+      "source": {"url": "https://computeprices.com", "date": "2026-10-14", "secondary": true}}
+  },
+  "calibration": {
+    "sglang_b1": {"label": "SGLang GLM-5-FP8, 8xH200, TP8, random 1000/1000, concurrency 1", "gpu": "h200", "n_gpus": 8, "batch": 1,
+      "out_tok_s": 117.96, "url": "https://docs.sglang.io/cookbook/autoregressive/GLM/GLM-5", "date": "2026-10-26",
+      "caveat": "GLM-5 not 5.3, synthetic data, MTP state not stated"},
+    "sglang_c100": {"label": "SGLang GLM-5-FP8, 8xH200, TP8, random 1000/1000, concurrency 100", "gpu": "h200", "n_gpus": 8, "batch": 100,
+      "out_tok_s": 1214.97, "total_tok_s": 2435, "url": "https://docs.sglang.io/cookbook/autoregressive/GLM/GLM-5", "date": "2026-10-26",
+      "caveat": "GLM-5 not 5.3, synthetic data, MTP state not stated"},
+    "llmd_kv_tp8": {"label": "llm-d GLM-5.2-FP8, 8xH200, TP8: 25 GiB KV per rank, ~598K logical tokens", "gpu": "h200", "n_gpus": 8,
+      "kv_gib_per_rank": 25.0, "kv_tokens": 598000, "kv_bytes_per_token": 44900,
+      "url": "https://llm-d.ai/blog/serving-glm-5-2-agentic-workloads-on-llm-d", "date": "2026-07-22",
+      "caveat": "vendor-adjacent blog; GLM-5.2 has the same architecture as 5.3"},
+    "llmd_c128": {"label": "llm-d GLM-5.2-FP8, 64xH200 P/D wide-EP, agentic traces, concurrency 128", "gpu": "h200-discounted", "n_gpus": 64, "batch": 128,
+      "out_tok_s": 6281, "usd_m_out": 3.55, "usd_m_in": 0.05, "url": "https://llm-d.ai/blog/serving-glm-5-2-agentic-workloads-on-llm-d", "date": "2026-07-22",
+      "caveat": "best case, sustained load; used as a sanity reference only, not fitted"}
+  },
+  "fitted": {
+    "_note": "Fit by glmkit.deploy.sizing.fit_calibration() from sglang_b1 and sglang_c100; a test re-fits and compares. eta is the HBM bandwidth efficiency, routing_skew interpolates uniform routing (0) to all tokens sharing k experts (1).",
+    "eta": 0.1233,
+    "routing_skew": 0.4815
+  },
+  "assumptions": {
+    "gpu_memory_utilization": 0.9,
+    "runtime_overhead_gb": 5.6,
+    "runtime_overhead_note": "Calibrated: 141 GB x 0.9 - 94.5 GB weights/rank - 25 GiB KV/rank (llm-d) leaves 5.6 GB for activations and CUDA graphs",
+    "compute_eta": 0.3,
+    "prefill_eta": 0.25,
+    "default_utilisation": 0.5,
+    "engine_parsers": {
+      "vllm": {"tool_call_parser": "glm47", "reasoning_parser": "glm47"},
+      "sglang": {"tool_call_parser": "glm47", "reasoning_parser": "glm45"},
+      "llm-d": {"tool_call_parser": "glm47", "reasoning_parser": "glm45"}
+    }
+  },
+  "reference_costs": {
+    "nebius_h200_sglang_c100": {"gpu_usd_hr": 5.40, "n_gpus": 8, "total_tok_s": 2435, "usd_m_blended": 4.93},
+    "llmd_discounted_same_throughput": {"gpu_usd_hr": 2.71, "n_gpus": 8, "total_tok_s": 2435, "usd_m_blended": 2.47},
+    "llmd_64xh200_output_only": {"gpu_usd_hr": 2.71, "n_gpus": 64, "out_tok_s": 6281, "usd_m_out": 7.67}
+  }
+}
