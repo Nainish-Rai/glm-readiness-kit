@@ -4,6 +4,7 @@ folder is added through GLMKIT_CASES_DIRS; everything is picked up by discovery 
 
 from __future__ import annotations
 
+import re
 import sys
 import textwrap
 from collections.abc import Iterator
@@ -128,7 +129,9 @@ def test_dummy_slice_plugs_in_everywhere(dummy_slice) -> None:
     site = dummy_slice / "site"
     built = run.invoke(app, ["report", "build", str(results), "-o", str(site)])
     assert built.exit_code == 0, built.output
-    assert "tabs=runs,conformance,dummy" in built.output and "token check: 0 finding(s)" in built.output
+    assert (
+        re.search(r"tabs=runs,conformance(,\w+)*,dummy", built.output) and "token check: 0 finding(s)" in built.output
+    )
     html = (site / "index.html").read_text()
     assert 'id="view-dummy"' in html and 'GLMKit.registerPage("dummy"' in html
     assert (site / "data" / "dummy.js").exists()

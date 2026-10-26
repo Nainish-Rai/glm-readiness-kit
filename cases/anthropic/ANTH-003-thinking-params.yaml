@@ -1,0 +1,55 @@
+schema_version: 1
+id: ANTH-003
+title: "Anthropic thinking: budget_tokens and output_config.effort are accepted, blocks are signed, a tool round trip keeps the thinking block"
+category: anthropic
+severity: major
+kind: deterministic
+executor: thinking_roundtrip
+applies_to:
+  models: [glm-5.3, glm-5.3-flash]
+  protocols: [anthropic_messages]
+source:
+  issues: []
+  urls: ["https://docs.z.ai/devpack/latest-model.md"]
+  spec: ["https://docs.z.ai/devpack/latest-model.md", "https://docs.z.ai/devpack/tool/claude.md"]
+  first_seen: 2026-10-26
+modes: [nonstream]
+request:
+  messages:
+    - {role: user, content: "Reply OK"}
+  max_tokens: 1024
+  params: {thinking: {type: enabled, budget_tokens: 2048}}
+variants:
+  - id: effort
+    request:
+      params: {thinking: {type: enabled, budget_tokens: null}, output_config: {effort: low}}
+  - id: roundtrip
+    request:
+      messages:
+        - {role: user, content: "What is the weather in Paris?"}
+      tools: [{name: get_weather, description: "Current weather for a city", parameters: {type: object, properties: {city: {type: string}}, required: [city]}}, {name: get_time, description: "Current time in a city", parameters: {type: object, properties: {city: {type: string}}, required: [city]}}]
+      params: {thinking: {type: enabled, budget_tokens: 2048}}
+    expect:
+      default:
+        - {check: wire_no_5xx_any}
+        - {check: wire_no_leak_any}
+        - {check: wire_tool_roundtrip}
+        - {check: wire_thinking_signature, exchange: turn1}
+        - {check: finish_reason, in: [stop]}
+expect:
+  default:
+    - {check: http_status, equals: 200}
+    - {check: no_internal_leak}
+    - {check: reasoning_present}
+  api:
+    - {check: wire_thinking_signature}
+  plan:
+    - {check: wire_thinking_signature}
+  third_party:
+    - {check: wire_thinking_signature, soft: true}
+  self_hosted:
+    - {check: wire_thinking_signature, soft: true}
+notes: >
+  budget_tokens may be ignored by the host (allowed) but must not be rejected. The roundtrip variant sends
+  the assistant's thinking block (with its signature) and the tool_use back with a tool_result. Planted defect:
+  thinking-block-rejected (caught by the roundtrip variant).

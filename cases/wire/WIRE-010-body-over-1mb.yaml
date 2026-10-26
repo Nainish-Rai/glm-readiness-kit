@@ -1,0 +1,31 @@
+schema_version: 1
+id: WIRE-010
+title: "a request body over 1 MB is rejected 4xx (1261 / 413) or fully processed, never silently dropped"
+category: wire/errors
+severity: major
+kind: deterministic
+executor: wire_single
+executor_config: {pad_chars: 1100000}
+applies_to:
+  models: [glm-5.3, glm-5.3-flash]
+  protocols: [openai_chat, anthropic_messages]
+source:
+  issues: ["zai-org/zai-coding-plugins#15"]
+  urls: ["https://github.com/zai-org/zai-coding-plugins/issues/15"]
+  spec: ["https://docs.z.ai/api-reference/api-code.md"]
+  first_seen: 2026-10-26
+modes: [nonstream]
+request:
+  messages:
+    - {role: user, content: "Summarise the filler below in one word."}
+  max_tokens: 64
+expect:
+  default:
+    - {check: no_5xx}
+    - {check: no_internal_leak}
+    - {check: wire_large_body_handled, max_bytes_per_token: 8}
+notes: >
+  The body is padded to about 1.1 MB at run time (the evidence keeps the first 300 characters; body_bytes keeps
+  the real size). On a 200 the reported prompt tokens must be plausible for the size ("input_tokens 0" means
+  the body was dropped). Costs about 280k input tokens on a host that processes it. Planted defect:
+  large-body-zero-usage.

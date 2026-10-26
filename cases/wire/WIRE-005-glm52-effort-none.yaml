@@ -1,0 +1,35 @@
+schema_version: 1
+id: WIRE-005
+title: "glm-5.2 with reasoning_effort none answers 200 without reasoning"
+category: wire
+severity: major
+kind: deterministic
+applies_to:
+  models: [glm-5.2]
+  protocols: [openai_chat, anthropic_messages]
+source:
+  issues: []
+  urls: ["https://docs.z.ai/guides/capabilities/thinking.md"]
+  spec: ["https://docs.z.ai/guides/capabilities/thinking.md"]
+  first_seen: 2026-10-26
+modes: [nonstream]
+request:
+  model: glm-5.2
+  messages:
+    - {role: user, content: "Reply OK"}
+  max_tokens: 256
+  params:
+    reasoning_effort: none
+expect:
+  default:
+    - {check: http_status, equals: 200}
+    - {check: no_internal_leak}
+    - {check: content_present}
+    - {check: reasoning_absent}
+  third_party:
+    - {check: reasoning_absent, soft: true}
+  self_hosted:
+    - {check: reasoning_absent, soft: true}
+notes: >
+  Only glm-5.2/5.1-style models can skip thinking; glm-5.3 cannot (WIRE-001). Planted defect:
+  effort-none-still-thinks.

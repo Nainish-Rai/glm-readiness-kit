@@ -1,0 +1,27 @@
+schema_version: 1
+id: ANTH-001
+title: "Anthropic stream: message_start.usage.input_tokens is greater than 0"
+category: anthropic
+severity: major
+kind: deterministic
+applies_to:
+  models: [glm-5.3, glm-5.3-flash]
+  protocols: [anthropic_messages]
+source:
+  issues: ["zai-org/GLM-5#139"]
+  urls: ["https://github.com/zai-org/GLM-5/issues/139"]
+  spec: ["https://docs.anthropic.com/en/api/messages-streaming"]
+  first_seen: 2026-10-26
+modes: [stream]
+request:
+  messages:
+    - {role: user, content: "Say OK"}
+  max_tokens: 64
+expect:
+  default:
+    - {check: http_status, equals: 200}
+    - {check: sse_terminates}
+    - {check: wire_message_start_input_tokens}
+notes: >
+  Clients that budget context from message_start (Claude Code) read 0 and never compact. GLM-5#139 saw zeros
+  on the Coding Plan key. Planted defect: zero-message-start-usage.

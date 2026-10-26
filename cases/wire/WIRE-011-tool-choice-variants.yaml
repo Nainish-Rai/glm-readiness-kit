@@ -1,0 +1,35 @@
+schema_version: 1
+id: WIRE-011
+title: "tool_choice none / required / named function: a rejection is recorded, an acceptance is honoured"
+category: wire
+severity: info
+kind: deterministic
+applies_to:
+  models: [glm-5.3, glm-5.3-flash]
+  protocols: [openai_chat, anthropic_messages]
+source:
+  issues: ["zai-org/GLM-5#144"]
+  urls: ["https://github.com/zai-org/GLM-5/issues/144"]
+  spec: ["https://docs.z.ai/guides/capabilities/function-calling.md"]
+  first_seen: 2026-10-26
+modes: [nonstream]
+repeats: 3
+request:
+  messages:
+    - {role: user, content: "What is the weather in Paris?"}
+  tools: [{name: get_weather, description: "Current weather for a city", parameters: {type: object, properties: {city: {type: string}}, required: [city]}}, {name: get_time, description: "Current time in a city", parameters: {type: object, properties: {city: {type: string}}, required: [city]}}]
+  tool_choice: none
+  max_tokens: 512
+variants:
+  - {id: required, request: {tool_choice: required}}
+  - {id: named, request: {tool_choice: {type: function, function: {name: get_time}}}}
+expect:
+  default:
+    - {check: no_5xx}
+    - {check: no_internal_leak}
+    - {check: wire_tool_choice_honored}
+notes: >
+  The docs list only `auto`, so a 400 is a documented answer and is recorded. When a host accepts the value it
+  must honour it: none gives no tool call, required gives one, a named function gives that function. The
+  prompt asks about weather, so an ignored named choice returns get_weather. Repeated 3 times here, raise it
+  with a case copy for live runs (research asks N=10). Planted defect: tool-choice-ignored.

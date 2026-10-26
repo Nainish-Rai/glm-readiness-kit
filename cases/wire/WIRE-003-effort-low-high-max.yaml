@@ -1,0 +1,36 @@
+schema_version: 1
+id: WIRE-003
+title: "reasoning_effort low / high / max all answer 200 and thinking length grows with the level"
+category: wire
+severity: major
+kind: statistical
+executor: effort_sweep
+executor_config: {levels: [low, high, max], runs: 3}
+applies_to:
+  models: [glm-5.3, glm-5.3-flash]
+  protocols: [openai_chat, anthropic_messages]
+source:
+  issues: []
+  urls: ["https://docs.z.ai/guides/llm/glm-5.3.md"]
+  spec: ["https://docs.z.ai/guides/capabilities/thinking.md"]
+  first_seen: 2026-10-26
+modes: [nonstream]
+request:
+  messages:
+    - {role: user, content: "What is 17 times 24? Think it through, then give the number."}
+  max_tokens: 4096
+expect:
+  default:
+    - {check: wire_no_5xx_any}
+    - {check: wire_no_leak_any}
+  api:
+    - {check: wire_effort_monotone, slack: 0.1}
+  plan:
+    - {check: wire_effort_monotone, slack: 0.1}
+  third_party:
+    - {check: wire_effort_monotone, slack: 0.1, soft: true}
+  self_hosted:
+    - {check: wire_effort_monotone, slack: 0.1, soft: true}
+notes: >
+  Median completion tokens over 3 runs per level (reasoning counts). low <= high <= max within 10 percent, and
+  max must exceed low, otherwise the effort knob does nothing. Planted defect: effort-ignored.

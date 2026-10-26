@@ -1,0 +1,39 @@
+schema_version: 1
+id: ANTH-004
+title: "token accounting: reported input tokens stay within 1.3x of the reference on 10 corpora"
+category: anthropic/usage
+severity: major
+kind: statistical
+executor: corpora
+executor_config:
+  reference: count_tokens
+  corpora: {$ref: fixtures/wire/token-corpora.json}
+applies_to:
+  models: [glm-5.3, glm-5.3-flash]
+  protocols: [anthropic_messages]
+source:
+  issues: ["zai-org/zai-coding-plugins#12"]
+  urls: ["https://github.com/zai-org/zai-coding-plugins/issues/12"]
+  spec: ["https://docs.z.ai/devpack/tool/claude.md"]
+  first_seen: 2026-10-26
+modes: [nonstream]
+request:
+  messages:
+    - {role: user, content: "placeholder, replaced per corpus"}
+  max_tokens: 1
+tolerance: {max_ratio: 1.3}
+expect:
+  default:
+    - {check: wire_no_5xx_any}
+    - {check: wire_token_ratio, max_ratio: 1.3}
+  third_party:
+    - {check: wire_token_ratio, max_ratio: 1.3, soft: true}
+  self_hosted:
+    - {check: wire_token_ratio, max_ratio: 1.3, soft: true}
+notes: >
+  One request per corpus (JSON, English, Python, CJK, special characters, markdown, logs, base64, numbers,
+  mixed scripts) with max_tokens 1. Reference tokens come from the host's own /v1/messages/count_tokens
+  (label ref:<corpus>), or from the JSON file {"corpus": tokens} named by $GLMKIT_TOKEN_REFERENCE (measure it
+  on the official API for the same model). With neither, the check is skipped and the raw counts stay in the
+  evidence. The OpenAI-vs-Anthropic path comparison (within 2 percent) is not implemented here.
+  Planted defect: inflated-token-counts.

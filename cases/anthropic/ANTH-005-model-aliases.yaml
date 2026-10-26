@@ -1,0 +1,31 @@
+schema_version: 1
+id: ANTH-005
+title: "model aliases (opus, claude-sonnet-*, glm-5.3[1m]) are rejected or served by a GLM model that the reply names"
+category: anthropic
+severity: minor
+kind: deterministic
+applies_to:
+  protocols: [anthropic_messages]
+source:
+  issues: []
+  urls: ["https://docs.z.ai/devpack/tool/claude.md", "https://docs.z.ai/devpack/latest-model.md"]
+  spec: ["https://docs.z.ai/devpack/tool/claude.md"]
+  first_seen: 2026-10-26
+modes: [nonstream]
+request:
+  model: opus
+  messages:
+    - {role: user, content: "Reply OK"}
+  max_tokens: 64
+variants:
+  - {id: claude-sonnet, request: {model: claude-sonnet-4-5}}
+  - {id: one-million, request: {model: "glm-5.3[1m]"}}
+expect:
+  default:
+    - {check: no_5xx}
+    - {check: no_internal_leak}
+    - {check: wire_alias_model_reported}
+notes: >
+  The server-side meaning of Claude aliases is not documented (Claude Code maps them client-side through
+  ANTHROPIC_DEFAULT_*_MODEL), so a 4xx is an acceptable, recorded answer. A 200 must name the GLM model that
+  served it. The [1m] suffix is a client-side marker that a host may strip. Planted defect: alias-echo-model.

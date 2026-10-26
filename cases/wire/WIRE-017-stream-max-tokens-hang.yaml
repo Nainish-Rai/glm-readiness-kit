@@ -1,0 +1,31 @@
+schema_version: 1
+id: WIRE-017
+title: "stream cut by max_tokens 1 ends with finish_reason length and terminates within the timeout (hang detection)"
+category: wire/stream
+severity: critical
+kind: deterministic
+executor: wire_single
+executor_config: {stream_timeout_s: 30}
+applies_to:
+  models: [glm-5.3, glm-5.3-flash]
+  protocols: [openai_chat, anthropic_messages]
+source:
+  issues: ["ollama/ollama#18926"]
+  urls: ["https://docs.z.ai/api-reference/api-code.md"]
+  spec: ["https://docs.z.ai/api-reference/api-code.md"]
+  first_seen: 2026-10-26
+modes: [stream]
+request:
+  messages:
+    - {role: user, content: "Write a long story about a lighthouse keeper."}
+  max_tokens: 1
+expect:
+  default:
+    - {check: http_status, equals: 200}
+    - {check: sse_terminates}
+    - {check: finish_reason, in: [length]}
+    - {check: no_internal_leak}
+notes: >
+  The stream deadline is the smaller of executor_config.stream_timeout_s (30 s here) and the run's
+  --stream-timeout. A stalled stream is recorded as transport_error stream_timeout and fails sse_terminates; the
+  runner always moves on. Planted defect: hanging-stream.

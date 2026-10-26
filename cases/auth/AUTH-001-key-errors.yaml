@@ -1,0 +1,51 @@
+schema_version: 1
+id: AUTH-001
+title: "invalid key and missing credentials give 401 (1000/1001); a key of the wrong class is classified"
+category: auth/limits
+severity: major
+kind: deterministic
+executor: auth_probe
+executor_config:
+  probes:
+    - {label: invalid, auth: invalid}
+    - {label: missing, auth: none}
+    # Optional, live only: a plan key against the standard API URL, and the reverse. Set the variables to run them.
+    - {label: plan-key-on-api, protocols: [openai_chat], auth: native, key_env: GLMKIT_ZAI_PLAN_KEY, base_url: "https://api.z.ai/api/paas/v4"}
+    - {label: api-key-on-plan, protocols: [openai_chat], auth: native, key_env: GLMKIT_ZAI_API_KEY, base_url: "https://api.z.ai/api/coding/paas/v4"}
+applies_to:
+  protocols: [openai_chat, anthropic_messages]
+source:
+  issues: ["zai-org/zai-coding-plugins#34"]
+  urls: ["https://docs.z.ai/devpack/notice/api-key-management.md", "https://docs.z.ai/api-reference/api-code.md"]
+  spec: ["https://docs.z.ai/api-reference/api-code.md"]
+  first_seen: 2026-10-26
+modes: [nonstream]
+request:
+  messages:
+    - {role: user, content: "Reply OK"}
+  max_tokens: 32
+expect:
+  default:
+    - {check: wire_no_5xx_any}
+    - {check: wire_no_leak_any}
+    - {check: wire_cross_key_classified}
+  api:
+    - {check: http_status, exchange: "auth:invalid", equals: 401}
+    - {check: error_code, exchange: "auth:invalid", in: ["1000", "1001"]}
+    - {check: wire_error_code_known, exchange: "auth:invalid"}
+    - {check: http_status, exchange: "auth:missing", equals: 401}
+    - {check: error_code, exchange: "auth:missing", in: ["1000", "1001"]}
+  plan:
+    - {check: http_status, exchange: "auth:invalid", equals: 401}
+    - {check: error_code, exchange: "auth:invalid", in: ["1000", "1001"]}
+    - {check: http_status, exchange: "auth:missing", equals: 401}
+    - {check: error_code, exchange: "auth:missing", in: ["1000", "1001"]}
+  third_party:
+    - {check: http_status, exchange: "auth:invalid", in: [401, 403], soft: true}
+    - {check: http_status, exchange: "auth:missing", in: [401, 403], soft: true}
+  self_hosted:
+    - {check: http_status, exchange: "auth:invalid", in: [200, 401, 403], soft: true}
+notes: >
+  A plan key on the standard URL (or the reverse) returns 1113 / 13xx 429 depending on the key class; the cross
+  probes only run when GLMKIT_ZAI_PLAN_KEY / GLMKIT_ZAI_API_KEY are set (names only, never values, in the
+  evidence) and are classified by the error taxonomy. Planted defect: auth-missing-500.

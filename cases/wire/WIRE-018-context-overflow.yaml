@@ -1,0 +1,35 @@
+schema_version: 1
+id: WIRE-018
+title: "a prompt past the context window ends as model_context_window_exceeded or 400/1261, never a hang or 5xx"
+category: wire/errors
+severity: major
+kind: deterministic
+executor: wire_single
+executor_config: {pad_chars: 4400000, stream_timeout_s: 120}
+opt_in: true
+applies_to:
+  models: [glm-5.3, glm-5.3-flash]
+  protocols: [openai_chat, anthropic_messages]
+source:
+  issues: []
+  urls: ["https://docs.z.ai/api-reference/llm/chat-completion.md"]
+  spec: ["https://docs.z.ai/api-reference/api-code.md"]
+  first_seen: 2026-10-26
+modes: [nonstream]
+request:
+  messages:
+    - {role: user, content: "Summarise the filler below in one word."}
+  max_tokens: 64
+expect:
+  default:
+    - {check: no_5xx}
+    - {check: no_internal_leak}
+    - {check: wire_context_overflow_handled, codes: ["1261"]}
+  third_party:
+    - {check: wire_context_overflow_handled, codes: ["1261", "context_length_exceeded"], soft: true}
+  self_hosted:
+    - {check: wire_context_overflow_handled, codes: ["1261", "context_length_exceeded"], soft: true}
+notes: >
+  Opt-in because a host that accepts the prompt bills about 1.1M input tokens. The padding (4.4M characters)
+  assumes the 1M-token window of glm-5.3; for a smaller self-hosted window copy this case and lower pad_chars to
+  about 4 x window. Run with `--cases WIRE-018` or `--include-opt-in`. Planted defect: context-overflow-500.

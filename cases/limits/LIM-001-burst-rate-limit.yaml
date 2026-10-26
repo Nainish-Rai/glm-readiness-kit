@@ -1,0 +1,33 @@
+schema_version: 1
+id: LIM-001
+title: "a burst of 12 concurrent requests ends in 2xx or well-formed 429s (1302/1305/13xx with a Retry hint), never 5xx"
+category: auth/limits
+severity: major
+kind: soak
+executor: burst
+executor_config: {n: 12}
+applies_to:
+  models: [glm-5.3, glm-5.3-flash]
+  protocols: [openai_chat, anthropic_messages]
+source:
+  issues: []
+  urls: ["https://docs.z.ai/api-reference/api-code.md"]
+  spec: ["https://docs.z.ai/api-reference/api-code.md"]
+  first_seen: 2026-10-26
+modes: [nonstream]
+request:
+  messages:
+    - {role: user, content: "Reply OK"}
+  max_tokens: 16
+expect:
+  default:
+    - {check: wire_no_5xx_any}
+    - {check: wire_no_leak_any}
+    - {check: wire_rate_limit_wellformed}
+  third_party:
+    - {check: wire_rate_limit_wellformed}
+notes: >
+  Exact limits are unknown (the rate-limit page was not retrievable), so the case does not demand a 429. If the
+  host throttles, the 429s must carry a documented throttle code and a Retry-After header or reset time. The
+  runner marks a run with documented throttle codes as `throttled` and keeps it out of quality scores. Raise n
+  with a case copy to find the limit. Planted defects: rate-limit-bare (fails), rate-limit-burst (well formed).
