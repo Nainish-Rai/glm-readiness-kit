@@ -1,0 +1,28 @@
+schema_version: 1
+id: STRM-004B
+title: 'stream: the parity detector flags the sglang#35564 stream (typed arguments streamed as strings)'
+category: stream/reassembly
+severity: minor
+kind: deterministic
+executor: stream_fixture
+executor_config:
+  fixture:
+    $ref: fixtures/agentloop/typed-args-sglang-35564.json
+source:
+  issues:
+  - sgl-project/sglang#35564
+  urls:
+  - https://github.com/sgl-project/sglang/issues/35564
+  spec: []
+  first_seen: '2026-09-28'
+modes:
+- nonstream
+request:
+  messages:
+  - role: user
+    content: offline fixture; no request is sent
+expect:
+  default:
+  - check: stream_split_independent
+    expect_divergence: true
+notes: 'Self-test: this fixture is known-buggy, so the case passes only if the detector reports a difference.'

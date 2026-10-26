@@ -1,0 +1,61 @@
+schema_version: 1
+id: THINK-006
+title: 'thinking (soak): 100 sequential agent turns on one session show no degeneration, empty length stops or U+FFFD'
+category: thinking/soak
+severity: info
+kind: soak
+opt_in: true
+tags:
+- soak
+executor: soak_loop
+executor_config:
+  max_turns: 100
+  budget_tokens: 200000
+  replay: reasoning_content
+applies_to:
+  models:
+  - glm-5.3
+  - glm-5.3-flash
+source:
+  issues:
+  - vllm-project/vllm#56868
+  urls:
+  - https://github.com/vllm-project/vllm/issues/56868
+  spec: []
+  first_seen: '2026-10-09'
+modes:
+- nonstream
+request:
+  messages:
+  - role: system
+    content: You are a coding agent. Use the bash tool to inspect the workspace.
+  - role: user
+    content: Run `ls -la` with the bash tool, then report what you see.
+  tools:
+  - $ref: fixtures/agentloop/tools-bash.json
+  max_tokens: 1024
+  params:
+    thinking:
+      type: enabled
+      clear_thinking: false
+    reasoning_effort: max
+variants:
+- id: effort-high
+  request:
+    params:
+      reasoning_effort: high
+expect:
+  default:
+  - check: all_turns_ok
+  - check: soak_budget
+  - check: soak_degeneracy_rate
+    max_per_100: 0
+  - check: no_empty_length_stop
+    scope: all
+  - check: no_replacement_chars
+    scope: all
+  - check: no_tool_markup_in_text
+    scope: all
+notes: 'Opt-in and budget-capped: stops at max_turns or when decoded tokens reach the budget (GLMKIT_SOAK_BUDGET_TOKENS
+  or `glmkit conform soak --budget`). Reported apart from the correctness verdict (severity info, own run). The
+  upstream collapse needed ~76 requests / ~200k decoded tokens.'

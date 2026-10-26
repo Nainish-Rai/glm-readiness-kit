@@ -1,0 +1,64 @@
+schema_version: 1
+id: THINK-003
+title: 'thinking: the host accepts reasoning_content on replayed assistant messages; the ''reasoning'' alias is
+  recorded'
+category: thinking/replay
+severity: major
+kind: deterministic
+executor: replay_compare
+executor_config:
+  seed_turns: 1
+  branches:
+  - label: reasoning_content
+    replay: reasoning_content
+  - label: reasoning_alias
+    replay: reasoning
+  - label: both_fields
+    replay: both
+  - label: no_reasoning
+    replay: none
+applies_to:
+  models:
+  - glm-5.3
+  - glm-5.3-flash
+source:
+  issues:
+  - anomalyco/opencode#26762
+  urls:
+  - https://github.com/anomalyco/opencode/issues/26762
+  spec:
+  - https://docs.z.ai/guides/capabilities/thinking.md
+  first_seen: '2026-10-01'
+modes:
+- nonstream
+request:
+  messages:
+  - role: system
+    content: You are a coding agent. Use the bash tool to inspect the workspace.
+  - role: user
+    content: Run `ls -la` with the bash tool, then report what you see.
+  tools:
+  - $ref: fixtures/agentloop/tools-bash.json
+  max_tokens: 512
+  params:
+    thinking:
+      type: enabled
+      clear_thinking: false
+expect:
+  default:
+  - check: http_status
+    equals: 200
+    exchange: no_reasoning
+  - check: http_status
+    equals: 200
+    exchange: reasoning_content
+  - check: http_status
+    equals: 200
+    exchange: reasoning_alias
+    soft: true
+  - check: http_status
+    equals: 200
+    exchange: both_fields
+    soft: true
+notes: 'replay-compat report: reasoning_content is the field Z.ai documents (hard); the ''reasoning'' alias and
+  both fields together are recorded (soft) because providers differ (cerebras rejects reasoning_content).'

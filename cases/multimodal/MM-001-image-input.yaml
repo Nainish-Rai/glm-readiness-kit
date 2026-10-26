@@ -1,0 +1,90 @@
+schema_version: 1
+id: MM-001
+title: 'multimodal: glm-5.3-flash describes URL and base64 images (1-3, text before and after); text-only glm-5.3
+  rejects an image with 400/1210/1214'
+category: multimodal
+severity: major
+kind: deterministic
+source:
+  issues:
+  - farion1231/cc-switch#6737
+  urls:
+  - https://github.com/farion1231/cc-switch/issues/6737
+  spec:
+  - https://docs.z.ai/guides/vlm/glm-5.3-flash
+  first_seen: '2026-10-01'
+modes:
+- nonstream
+request:
+  model: glm-5.3-flash
+  messages:
+  - role: user
+    content:
+    - type: text
+      text: Describe this picture in one sentence.
+    - type: image_url
+      image_url:
+        url: https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png
+  max_tokens: 256
+variants:
+- id: base64
+  request:
+    messages:
+    - role: user
+      content:
+      - type: image_url
+        image_url:
+          url: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==
+      - type: text
+        text: What is in this image? Answer in one sentence.
+  expect: &id001
+    default:
+    - check: no_5xx
+    - check: http_status
+      equals: 200
+    - check: content_present
+    - check: finish_reason
+      in:
+      - stop
+- id: three-images
+  request:
+    messages:
+    - role: user
+      content:
+      - type: text
+        text: Here are three pictures.
+      - type: image_url
+        image_url:
+          url: https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png
+      - type: image_url
+        image_url:
+          url: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==
+      - type: image_url
+        image_url:
+          url: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==
+      - type: text
+        text: Describe each one in a short sentence.
+  expect: *id001
+- id: text-only-rejects
+  request:
+    model: glm-5.3
+  expect_class: control
+  expect:
+    default:
+    - check: no_5xx
+    - check: http_status
+      equals: 400
+    - check: error_code
+      in:
+      - '1210'
+      - '1214'
+    plan:
+    - check: no_5xx
+    - check: http_status
+      in:
+      - 200
+      - 400
+      soft: true
+expect: *id001
+notes: The 1x1 PNG is inline, so the base64 variants need no network. Whether a URL image is fetched depends on
+  the host. The rejection variant uses text-only glm-5.3; the planted defect text-only-accepts-image answers 200.

@@ -1,0 +1,55 @@
+schema_version: 1
+id: CACHE-002
+title: 'caching: over a 3-turn agent loop cached_tokens never falls and covers >= 70% of the prompt by turn 3'
+category: cache/agent-loop
+severity: major
+kind: deterministic
+executor: agent_loop
+executor_config:
+  turns: 3
+  prefix_tokens: 2000
+  replay: reasoning_content
+applies_to:
+  models:
+  - glm-5.3
+  - glm-5.3-flash
+source:
+  issues: []
+  urls:
+  - https://docs.z.ai/guides/capabilities/cache
+  spec:
+  - https://docs.z.ai/guides/capabilities/cache
+  first_seen: '2026-10-01'
+modes:
+- nonstream
+request:
+  messages:
+  - role: user
+    content: Run `ls -la` with the bash tool, then report what you see.
+  tools:
+  - $ref: fixtures/agentloop/tools-bash.json
+  max_tokens: 512
+  params:
+    thinking:
+      type: enabled
+      clear_thinking: false
+expect:
+  default:
+  - check: all_turns_ok
+  - check: no_tool_markup_in_text
+    scope: all
+  api:
+  - check: cached_tokens_grow
+    min_share: 0.7
+  plan:
+  - check: cached_tokens_grow
+    min_share: 0.7
+  third_party:
+  - check: cached_tokens_grow
+    min_share: 0.7
+    soft: true
+  self_hosted:
+  - check: cached_tokens_grow
+    min_share: 0.7
+    soft: true
+notes: A 2k-token system prefix gives the loop something to cache; the 70% bar is the Z.ai API figure.

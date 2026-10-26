@@ -1,0 +1,49 @@
+schema_version: 1
+id: CACHE-001
+title: 'caching: the same 2k-token prefix sent twice reports cached_tokens > 0 on the second request'
+category: cache/prefix
+severity: major
+kind: deterministic
+executor: repeat_prefix
+executor_config:
+  prefix_tokens: 2000
+  delay_s: 5.0
+applies_to:
+  models:
+  - glm-5.3
+  - glm-5.3-flash
+source:
+  issues: []
+  urls:
+  - https://docs.z.ai/guides/capabilities/cache
+  spec:
+  - https://docs.z.ai/guides/capabilities/cache
+  first_seen: '2026-10-01'
+modes:
+- nonstream
+request:
+  messages:
+  - role: user
+    content: Reply with the single word OK.
+  max_tokens: 64
+expect:
+  default:
+  - check: all_turns_ok
+  - check: cache_usage_field_present
+    exchange: second
+  api:
+  - check: cached_tokens_positive
+    exchange: second
+  plan:
+  - check: cached_tokens_positive
+    exchange: second
+  third_party:
+  - check: cached_tokens_positive
+    exchange: second
+    soft: true
+  self_hosted:
+  - check: cached_tokens_positive
+    exchange: second
+    soft: true
+notes: The 5 second wait is skipped against the in-process mock. Third-party and self-hosted hosts only record (soft);
+  implicit caching is a Z.ai API feature.

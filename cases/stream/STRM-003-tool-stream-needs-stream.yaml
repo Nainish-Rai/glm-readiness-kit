@@ -1,0 +1,55 @@
+schema_version: 1
+id: STRM-003
+title: 'stream: tool_stream without stream (and on glm-4.5) is answered with 200 (ignored) or 400/1210/1215, never
+  a 5xx'
+category: stream/tool_stream
+severity: info
+kind: deterministic
+applies_to:
+  models:
+  - glm-5.3
+  - glm-5.3-flash
+source:
+  issues: []
+  urls:
+  - https://docs.z.ai/guides/capabilities/stream-tool
+  spec:
+  - https://docs.z.ai/guides/capabilities/stream-tool
+  first_seen: '2026-10-01'
+modes:
+- nonstream
+request:
+  messages:
+  - role: user
+    content: Use get_weather for city Paris for 3 days in metric units.
+  tools:
+  - $ref: fixtures/agentloop/tools-typed.json
+  max_tokens: 200
+  params:
+    tool_stream: true
+variants:
+- id: glm-4.5
+  request:
+    model: glm-4.5
+  expect:
+    default:
+    - check: no_5xx
+    - check: no_internal_leak
+  expect_class: record
+expect:
+  default:
+  - check: no_5xx
+  - check: no_internal_leak
+  - check: http_status
+    in:
+    - 200
+    - 400
+  - check: error_code
+    in:
+    - '1210'
+    - '1215'
+    when:
+      check: http_status
+      equals: 400
+notes: 'The docs say tool_stream is limited to glm-5 while the reference lists glm-4.5; the response is recorded
+  either way. Planted defect: tool-stream-without-stream-500.'

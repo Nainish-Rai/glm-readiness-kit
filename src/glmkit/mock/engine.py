@@ -208,6 +208,15 @@ def check_auth(ctx: MockContext) -> ErrorReply | None:
     return None
 
 
+def _has_image(body: dict[str, Any]) -> bool:
+    return any(
+        isinstance(b, dict) and b.get("type") in ("image_url", "image")
+        for m in body.get("messages") or []
+        if isinstance(m, dict) and isinstance(m.get("content"), list)
+        for b in m["content"]
+    )
+
+
 def validate(ctx: MockContext) -> ErrorReply | None:
     """Apply GLM's documented request rules; on success resolve ``ctx.thinking`` / ``ctx.effort``."""
     body = ctx.body
@@ -221,6 +230,13 @@ def validate(ctx: MockContext) -> ErrorReply | None:
         return _err(400, "1211", "Unknown Model, please check the model code.", "unknown_model", "not_found_error")
     if not req.messages:
         return _err(400, "1213", "The parameter messages was not received normally.", "missing_messages")
+    if _has_image(body) and not model.startswith("glm-5.3-flash"):  # MM-001: text-only models reject images
+        return _err(
+            400,
+            "1214",
+            "The parameter messages is invalid: image input is not supported by this model.",
+            "image_unsupported",
+        )
     if ctx.protocol == "anthropic_messages" and req.max_tokens is None:
         # Anthropic Messages requires max_tokens. ASSUMED: 400 invalid_request_error (zai-coding-plugins#15 b1).
         return _err(400, "1213", "max_tokens: Field required", "missing_max_tokens")
@@ -390,7 +406,9 @@ def prompt_usage(ctx: MockContext) -> tuple[int, int]:
     is never served from cache, so a repeated request still has uncached input (as real prefix caches do)."""
     req = ctx.req
     assert req is not None
-    msgs = [m.__dict__ for m in req.messages]
+    thinking = ctx.body.get("thinking") if isinstance(ctx.body, dict) else None
+    clear = not (isinstance(thinking, dict) and thinking.get("clear_thinking") is False)  # default: reasoning ignored
+    msgs = [{**m.__dict__, "reasoning": None} if clear else m.__dict__ for m in req.messages]
     head = [req.system, [t.__dict__ for t in req.tools]]
     prompt = toks(json.dumps([head, msgs], ensure_ascii=False, sort_keys=True))
     lowest = 0 if (req.system or req.tools) else 1

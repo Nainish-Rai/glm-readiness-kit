@@ -1,0 +1,55 @@
+schema_version: 1
+id: THINK-001
+title: 'thinking: a 3-turn tool loop that replays reasoning_content with clear_thinking:false is accepted and hits
+  the cache'
+category: thinking/replay
+severity: major
+kind: deterministic
+executor: agent_loop
+executor_config:
+  turns: 3
+  replay: reasoning_content
+applies_to:
+  models:
+  - glm-5.3
+  - glm-5.3-flash
+source:
+  issues:
+  - farion1231/cc-switch#6737
+  - anomalyco/opencode#6708
+  - anomalyco/opencode#26762
+  urls:
+  - https://github.com/anomalyco/opencode/issues/6708
+  spec:
+  - https://docs.z.ai/guides/capabilities/thinking.md
+  - https://docs.z.ai/guides/capabilities/cache
+  first_seen: '2026-10-01'
+modes:
+- nonstream
+request:
+  messages:
+  - role: system
+    content: You are a coding agent. Use the bash tool to inspect the workspace.
+  - role: user
+    content: Run `ls -la` with the bash tool, then report what you see.
+  tools:
+  - $ref: fixtures/agentloop/tools-bash.json
+  max_tokens: 512
+  params:
+    thinking:
+      type: enabled
+      clear_thinking: false
+expect:
+  default:
+  - check: all_turns_ok
+  - check: agent_turn_has_tool_call
+    exchange: turn0
+  - check: no_tool_markup_in_text
+    scope: all
+  - check: cached_tokens_positive
+    exchange: turn1
+  - check: cached_tokens_positive
+    exchange: turn2
+    soft: true
+notes: 'Turn 2 and 3 replay the previous assistant message with its exact reasoning_content. Planted defects: reasoning-field-rejected
+  (400 on replay), no-cache-hits, tool-call-in-reasoning.'

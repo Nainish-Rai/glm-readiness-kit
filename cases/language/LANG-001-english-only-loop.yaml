@@ -1,0 +1,68 @@
+schema_version: 1
+id: LANG-001
+title: 'language: 40 English-only agentic turns contain no CJK in text or reasoning that is not quoted from the
+  inputs'
+category: language
+severity: major
+kind: statistical
+executor: agent_loop
+executor_config:
+  turns: 40
+  replay: reasoning_content
+  tool_output: 'step {turn}: the command finished with exit code 0 and printed three lines'
+  followups:
+  - Now check the git status of the repository.
+  - List the test files and report how many there are.
+  - Read the readme and summarise it in one sentence.
+applies_to:
+  models:
+  - glm-5.3
+  - glm-5.3-flash
+source:
+  issues:
+  - zai-org/GLM-5#142
+  - zai-org/GLM-5#54
+  urls:
+  - https://github.com/zai-org/GLM-5/issues/142
+  - https://github.com/zai-org/GLM-5/issues/54
+  spec: []
+  first_seen: '2026-10-03'
+modes:
+- nonstream
+request:
+  messages:
+  - role: system
+    content: You are a careful coding agent. Work in English only. Use the bash tool to inspect the workspace.
+  - role: user
+    content: Use the bash tool to run `ls -la` and tell me what you find.
+  tools:
+  - $ref: fixtures/agentloop/tools-bash.json
+  max_tokens: 512
+  params:
+    thinking:
+      type: enabled
+      clear_thinking: false
+variants:
+- id: effort-low
+  request:
+    params:
+      reasoning_effort: low
+- id: effort-high
+  request:
+    params:
+      reasoning_effort: high
+- id: effort-max
+  request:
+    params:
+      reasoning_effort: max
+expect:
+  default:
+  - check: all_turns_ok
+  - check: no_cjk_leak
+    scope: all
+    max_leaking_turns: 0
+  - check: reasoning_degeneracy
+    scope: all
+    max: 0.2
+notes: CJK runs that also occur in the system, user or tool messages are quotes, not leaks. Text and reasoning are
+  counted separately in the message; the rate per 1000 turns carries a 95% Wilson interval.

@@ -1,0 +1,104 @@
+schema_version: 1
+id: USAGE-001
+title: 'usage: prompt_tokens for a fixed corpus (text, CJK, JSON, tools, image) equals the golden constant recorded
+  for the provider'
+category: usage/tokens
+severity: minor
+kind: deterministic
+applies_to:
+  models:
+  - glm-5.3
+  - glm-5.3-flash
+source:
+  issues:
+  - zai-org/zai-coding-plugins#12
+  urls:
+  - https://github.com/zai-org/zai-coding-plugins/issues/12
+  spec: []
+  first_seen: '2026-10-02'
+modes:
+- nonstream
+request:
+  messages:
+  - role: user
+    content: Reply with the single word OK.
+  max_tokens: 16
+  temperature: 0
+variants:
+- id: cjk
+  request:
+    messages:
+    - role: user
+      content: 请用一句话回答：今天东京的天气怎么样？日本語でも構いません。
+  expect:
+    default:
+    - check: http_status
+      equals: 200
+    - check: prompt_tokens_golden
+      golden:
+        mock: 33
+    - check: prompt_tokens_ratio
+- id: json
+  request:
+    messages:
+    - role: user
+      content: '{"key": "value", "nested": {"data": 123, "list": [1, 2, 3]}}{"key": "value", "nested": {"data":
+        123, "list": [1, 2, 3]}}{"key": "value", "nested": {"data": 123, "list": [1, 2, 3]}}{"key": "value", "nested":
+        {"data": 123, "list": [1, 2, 3]}}{"key": "value", "nested": {"data": 123, "list": [1, 2, 3]}}{"key": "value",
+        "nested": {"data": 123, "list": [1, 2, 3]}}{"key": "value", "nested": {"data": 123, "list": [1, 2, 3]}}{"key":
+        "value", "nested": {"data": 123, "list": [1, 2, 3]}}{"key": "value", "nested": {"data": 123, "list": [1,
+        2, 3]}}{"key": "value", "nested": {"data": 123, "list": [1, 2, 3]}}{"key": "value", "nested": {"data": 123,
+        "list": [1, 2, 3]}}{"key": "value", "nested": {"data": 123, "list": [1, 2, 3]}} Say OK.'
+  expect:
+    default:
+    - check: http_status
+      equals: 200
+    - check: prompt_tokens_golden
+      golden:
+        mock: 237
+    - check: prompt_tokens_ratio
+- id: tools
+  request:
+    messages:
+    - role: user
+      content: Use get_weather for city Paris for 3 days in metric units.
+    tools:
+    - $ref: fixtures/agentloop/tools-typed.json
+  expect:
+    default:
+    - check: http_status
+      equals: 200
+    - check: prompt_tokens_golden
+      golden:
+        mock: 114
+    - check: prompt_tokens_ratio
+- id: image-flash
+  request:
+    messages:
+    - role: user
+      content:
+      - type: text
+        text: Describe this picture in one sentence.
+      - type: image_url
+        image_url:
+          url: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==
+    model: glm-5.3-flash
+  expect:
+    default:
+    - check: http_status
+      equals: 200
+    - check: prompt_tokens_golden
+      golden:
+        mock: 35
+    - check: prompt_tokens_ratio
+expect:
+  default:
+  - check: http_status
+    equals: 200
+  - check: prompt_tokens_golden
+    golden:
+      mock: 33
+  - check: prompt_tokens_ratio
+notes: 'Golden constants exist only for the mock (computed by its deterministic rule). The constants for api.z.ai
+  are recorded from the live run in issue 16; until then the check skips there and prompt_tokens_ratio reports the
+  ratio against a chars/4 estimate (plugins#12: JSON ~1.43x, special characters ~2.4x).'
