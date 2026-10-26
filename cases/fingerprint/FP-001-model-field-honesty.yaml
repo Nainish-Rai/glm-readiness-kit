@@ -1,0 +1,22 @@
+schema_version: 1
+id: FP-001
+title: "response model equals the requested model; an unknown model is refused, not silently answered"
+category: fingerprint
+severity: major
+kind: deterministic
+executor: model_identity
+source:
+  issues: ["zai-org/zai-coding-plugins#15"]
+  urls: ["https://github.com/zai-org/zai-coding-plugins/issues/15"]
+  first_seen: 2026-10-01
+modes: [nonstream]
+opt_in: true
+request:
+  messages: []
+  max_tokens: 16
+  params: {reasoning_effort: low}
+expect:
+  default:
+    - {check: model_field_honest}
+tags: [host-quality, fingerprint]
+notes: Same oracle family as WIRE-006 (research/01-conformance.md section 5), run as a host-quality probe.

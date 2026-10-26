@@ -1,0 +1,24 @@
+schema_version: 1
+id: FP-002
+title: "action fingerprint: tool-choice histogram over 40 ambiguous prompts vs the stored reference (MMD permutation test)"
+category: fingerprint
+severity: major
+kind: fingerprint
+executor: action_probe
+executor_config:
+  concurrency: 4
+  temperature: 1.0
+source:
+  urls: ["https://arxiv.org/abs/2609.00052"]
+modes: [nonstream]
+repeats: 6
+opt_in: true
+request:
+  messages: []
+expect:
+  default:
+    - {check: action_distribution_vs_reference, alpha: 0.01, permutations: 1999, seed: 20261026, min_samples: 30}
+tags: [host-quality, fingerprint]
+notes: >-
+  `repeats` is the number of samples per prompt (research suggests 8 for a real host). Needs a reference
+  (`glmkit conform reference record`); without one the check is skipped and the host-side histogram is kept.

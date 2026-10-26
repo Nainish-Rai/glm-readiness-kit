@@ -1,0 +1,22 @@
+schema_version: 1
+id: FP-005
+title: "capability canaries: BFCL-style tool slice, math slice, needle at 128k as percent of reference"
+category: fingerprint
+severity: major
+kind: fingerprint
+executor: canary_probe
+executor_config:
+  needle_tokens: 128000
+  concurrency: 2
+source:
+  urls: ["https://artificialanalysis.ai/methodology"]
+modes: [nonstream]
+repeats: 1
+opt_in: true
+request:
+  messages: []
+expect:
+  default:
+    - {check: capability_canaries}
+tags: [host-quality, fingerprint]
+notes: Flagged when the 95% CI of host/reference accuracy lies entirely below 100%.

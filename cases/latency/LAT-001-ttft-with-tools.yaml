@@ -1,0 +1,30 @@
+schema_version: 1
+id: LAT-001
+title: "TTFT with vs without tools on a 20k-token cached prompt (median over N)"
+category: latency
+severity: info
+kind: statistical
+executor: latency_tools
+executor_config:
+  prompt_tokens: 20000
+  tool_counts: [0, 1, 60]
+source:
+  issues: ["zai-org/GLM-5#144"]
+  urls: ["https://github.com/zai-org/GLM-5/issues/144"]
+  first_seen: 2026-10-01
+modes: [stream]
+repeats: 10
+opt_in: true
+request:
+  messages: []
+  tool_choice: none
+  max_tokens: 16
+  temperature: 0
+  params: {reasoning_effort: low}
+expect:
+  default:
+    - {check: latency_tool_penalty, max_delta_s: 1.0, alpha: 0.05, seed: 20261026}
+tags: [host-quality, latency]
+notes: >-
+  Host-quality case, not part of the correctness verdict (opt_in; run with `glmkit conform host`). Medians and p90
+  are reported over `repeats` valid samples per condition; HTTP 429 samples are excluded and counted separately.

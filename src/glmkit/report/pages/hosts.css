@@ -1,0 +1,13 @@
+/* Hosts tab. Tokens only. */
+.host-name { font-family: var(--font-mono); color: var(--fg-emph); white-space: nowrap; }
+.host-defects { display: block; color: var(--fg-meta); font-size: var(--text-meta); }
+.gate-pills { display: flex; gap: var(--space-1); flex-wrap: wrap; }
+.host-group { display: grid; gap: var(--space-3); }
+.host-group + .host-group { border-top: 1px solid var(--edge); padding-top: var(--space-4); margin-top: var(--space-4); }
+.host-group h3 { margin: 0; font-size: var(--text-body); color: var(--fg-emph); font-family: var(--font-mono); display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap; }
+.gate { display: grid; grid-template-columns: auto auto minmax(0, 1fr); gap: var(--space-2); align-items: baseline; padding: var(--space-2) 0; border-bottom: 1px solid var(--edge); font-size: 12px; }
+.gate:last-child { border-bottom: 0; }
+.gate .msg { grid-column: 1 / -1; color: var(--fg-meta); overflow-wrap: anywhere; }
+.gate .gid { font-family: var(--font-mono); color: var(--fg-emph); }
+.hist { display: grid; gap: var(--space-1); font-size: 12px; }
+@media (max-width: 520px) { .gate { grid-template-columns: auto minmax(0, 1fr); } }

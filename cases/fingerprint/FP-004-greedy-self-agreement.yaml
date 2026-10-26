@@ -1,0 +1,23 @@
+schema_version: 1
+id: FP-004
+title: "greedy self-agreement noise floor: identical temperature-0 requests, 5 runs"
+category: fingerprint
+severity: minor
+kind: fingerprint
+executor: greedy_probe
+executor_config:
+  prompts: 8
+  temperature: 0
+source:
+  issues: ["vllm-project/vllm#56868"]
+  urls: ["https://github.com/vllm-project/vllm/issues/56868"]
+modes: [nonstream]
+repeats: 5
+opt_in: true
+request:
+  messages: []
+expect:
+  default:
+    - {check: greedy_self_agreement, margin: 0.1}
+tags: [host-quality, fingerprint]
+notes: The measured rate is the host's noise floor; with a reference it is flagged when below reference minus margin.

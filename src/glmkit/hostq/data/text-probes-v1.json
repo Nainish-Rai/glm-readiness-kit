@@ -1,0 +1,87 @@
+{
+ "name": "text-probes",
+ "version": 1,
+ "description": "Short random-string prompts for a Hamming-kernel MMD (Model Equality Testing style).",
+ "prompts": [
+  {
+   "id": "t00",
+   "prompt": "Output a random 8-character lowercase hex string and nothing else."
+  },
+  {
+   "id": "t01",
+   "prompt": "Generate a random integer between 1 and 1000000 and nothing else."
+  },
+  {
+   "id": "t02",
+   "prompt": "Write one random English word that starts with the letter q."
+  },
+  {
+   "id": "t03",
+   "prompt": "Output a random 12-character alphanumeric password and nothing else."
+  },
+  {
+   "id": "t04",
+   "prompt": "Generate a random UUID version 4 and nothing else."
+  },
+  {
+   "id": "t05",
+   "prompt": "Write the first three digits that come to mind and nothing else."
+  },
+  {
+   "id": "t06",
+   "prompt": "Output a random color name and nothing else."
+  },
+  {
+   "id": "t07",
+   "prompt": "Give one random European capital city and nothing else."
+  },
+  {
+   "id": "t08",
+   "prompt": "Generate a random 6-letter nonsense word."
+  },
+  {
+   "id": "t09",
+   "prompt": "Output a random date in 2031 in ISO format and nothing else."
+  },
+  {
+   "id": "t10",
+   "prompt": "Write a random four-word phrase made of unrelated nouns."
+  },
+  {
+   "id": "t11",
+   "prompt": "Output a random prime number below 500 and nothing else."
+  },
+  {
+   "id": "t12",
+   "prompt": "Generate a random hexadecimal color code and nothing else."
+  },
+  {
+   "id": "t13",
+   "prompt": "Write a random animal name and nothing else."
+  },
+  {
+   "id": "t14",
+   "prompt": "Output ten random bits as a string of 0 and 1 and nothing else."
+  },
+  {
+   "id": "t15",
+   "prompt": "Generate a random two-letter country code and nothing else."
+  },
+  {
+   "id": "t16",
+   "prompt": "Write a random weekday and a random month separated by a comma."
+  },
+  {
+   "id": "t17",
+   "prompt": "Output a random sentence of exactly five words."
+  },
+  {
+   "id": "t18",
+   "prompt": "Generate a random IPv4 address and nothing else."
+  },
+  {
+   "id": "t19",
+   "prompt": "Write a random single-letter variable name and nothing else."
+  }
+ ]
+}
