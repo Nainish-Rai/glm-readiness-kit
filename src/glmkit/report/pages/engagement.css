@@ -1,0 +1,16 @@
+/* Engagement tab. Tokens only. */
+.eg-steps { list-style: none; margin: 0; padding: 0; display: grid; }
+.eg-steps li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--space-3); align-items: center; padding: var(--space-3) var(--space-4); border-top: 1px solid var(--edge); }
+.eg-steps li:first-child { border-top: 0; }
+.eg-step-t { min-width: 0; display: grid; gap: 2px; }
+.eg-step-t strong { color: var(--fg-emph); font-weight: 600; overflow-wrap: anywhere; }
+.eg-step-t span { color: var(--fg-meta); font-size: var(--text-meta); overflow-wrap: anywhere; }
+.eg-step-t code { font-family: var(--font-mono); font-size: var(--text-meta); color: var(--fg-body); }
+.eg-brief { padding: var(--space-3) var(--space-4); display: grid; gap: var(--space-3); }
+.eg-brief h4 { margin: 0 0 4px; font-size: var(--text-body); color: var(--fg-emph); }
+.eg-brief p { margin: 0; color: var(--fg-body); white-space: pre-wrap; overflow-wrap: anywhere; }
+.eg-brief p.todo { color: var(--fg-meta); }
+.eg-links { display: flex; flex-wrap: wrap; gap: var(--space-2); padding: var(--space-3) var(--space-4); }
+.eg-note { padding: var(--space-3) var(--space-4); color: var(--fg-meta); font-size: var(--text-meta); display: grid; gap: var(--space-2); }
+.eg-note p { margin: 0; overflow-wrap: anywhere; }
+@media (max-width: 520px) { .eg-steps li { grid-template-columns: auto minmax(0, 1fr); } .eg-steps li > :last-child { grid-column: 2; } }

@@ -1,0 +1,40 @@
+id: tau2-retail
+title: tau2-bench retail, first-tool-call slice
+summary: >-
+  A single-turn slice of the tau2-bench retail domain. The agent gets the retail policy and the customer's opening
+  facts, and must make the right first tool call (look up the customer). It is NOT the full multi-turn benchmark: no
+  user simulator, no database-state reward, no pass^k.
+task_types: [tool_use]
+items: 50
+sampling: "every retail task whose first reference action is a customer lookup with arguments stated in the customer's known info (50 of 114 tasks)"
+graders:
+  tool_use: {type: tool_use, mode: first}
+source:
+  dataset: sierra-research/tau2-bench (domain retail)
+  url: https://github.com/sierra-research/tau2-bench/tree/0c69df456a96aa76a1162591574dad9c427a34d7/data/tau2/domains/retail
+  revision: 0c69df456a96aa76a1162591574dad9c427a34d7
+  revision_kind: github-commit
+  files:
+    - url: https://raw.githubusercontent.com/sierra-research/tau2-bench/0c69df456a96aa76a1162591574dad9c427a34d7/data/tau2/domains/retail/tasks.json
+      path: data/tau2/domains/retail/tasks.json
+      sha256: 8e03ebce7901bd6218e7a7dc3105faa9324091a68058f7fe61c65262868812e8
+      bytes: 345982
+    - url: https://raw.githubusercontent.com/sierra-research/tau2-bench/0c69df456a96aa76a1162591574dad9c427a34d7/data/tau2/domains/retail/policy.md
+      path: data/tau2/domains/retail/policy.md
+      sha256: 2c9652afbce57d6e087768d37cda64d31c53d50b3e3225cfdb791bac66466467
+      bytes: 6699
+license:
+  spdx: MIT
+  name: MIT License
+  url: https://github.com/sierra-research/tau2-bench/blob/0c69df456a96aa76a1162591574dad9c427a34d7/LICENSE
+  verified_at: "2026-10-26"
+  verified_via:
+    - "GitHub API repos/sierra-research/tau2-bench: license = MIT"
+    - "LICENSE at commit 0c69df45: 'MIT License, Copyright (c) 2025 Sierra Research'"
+  notes: The license covers the repository, including the data files used here.
+attribution: >-
+  tau2-bench by Sierra Research (Barres, Dong, Ray, Si, Narasimhan, 2025, "tau^2-Bench: Evaluating Conversational
+  Agents in a Dual-Control Environment", https://arxiv.org/abs/2506.07982), MIT License, Copyright (c) 2025 Sierra
+  Research.
+modifications: Re-formatted into single-turn items with tool definitions derived from the reference action names and arguments.
+standin: "Synthetic stand-in (30 invented customer openers; same two lookup tools)."

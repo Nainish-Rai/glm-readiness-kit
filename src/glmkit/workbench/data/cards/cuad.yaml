@@ -1,0 +1,38 @@
+id: cuad
+title: CUAD contract-clause slice
+summary: Clause extraction from contract excerpts (token-F1 span grader) plus a one-sentence explanation graded by a judge.
+task_types: [clause_span, clause_explain]
+items: 60
+sampling: "40 span + 20 explain items from distinct contracts of CUADv1.json (answers 40-500 chars), random.Random(5); each excerpt is a 2,400 character window around the answer"
+graders:
+  clause_span: {type: span, min_f1: 0.5}
+  clause_explain: {type: judge, rubric: "Prefer the explanation that is more accurate to the clause quoted in the reference and clearer for a non-lawyer."}
+source:
+  dataset: theatticusproject/cuad-qa (CUAD v1)
+  url: https://github.com/TheAtticusProject/cuad/tree/67faa0e6023b04fcaae6cc09497ab00e5d63a2a2
+  hf_url: https://huggingface.co/datasets/theatticusproject/cuad-qa
+  revision: 67faa0e6023b04fcaae6cc09497ab00e5d63a2a2
+  revision_kind: github-commit (TheAtticusProject/cuad)
+  hf_revision: 6d9a118fb629814c4384a1e63cfc84f5c01894b3
+  files:
+    - url: https://github.com/TheAtticusProject/cuad/raw/67faa0e6023b04fcaae6cc09497ab00e5d63a2a2/data.zip
+      path: data.zip
+      member: CUADv1.json
+      sha256: f8161d18bea4e9c05e78fa6dda61c19c846fb8087ea969c172753bc2f45b999a
+      bytes: 18309308
+license:
+  spdx: CC-BY-4.0
+  name: Creative Commons Attribution 4.0 International
+  url: https://creativecommons.org/licenses/by/4.0/
+  verified_at: "2026-10-26"
+  verified_via:
+    - "Hugging Face API https://huggingface.co/api/datasets/theatticusproject/cuad-qa at revision 6d9a118f: cardData.license = cc-by-4.0"
+    - "cuad-qa.py at that revision states: CUAD is licensed under the Creative Commons Attribution 4.0 (CC BY 4.0) license."
+  notes: >-
+    The GitHub repository TheAtticusProject/cuad has no LICENSE file (GitHub API license: null) and its readme does
+    not state one; the license rests on the Hugging Face card and the dataset script. Not confirmed at the GitHub source.
+attribution: >-
+  CUAD v1 by The Atticus Project (Hendrycks, Burns, Chen, Ball, 2021, "CUAD: An Expert-Annotated NLP Dataset for
+  Legal Contract Review", https://arxiv.org/abs/2103.06268), licensed CC BY 4.0. Contract text is cut to excerpts.
+modifications: Contract text cut to a window around the annotated clause; questions re-worded into extraction and explanation prompts.
+standin: "Synthetic stand-in (44 invented contract excerpts with templated clauses; no CUAD text)."
