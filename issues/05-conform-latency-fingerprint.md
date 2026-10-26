@@ -1,6 +1,6 @@
 # 05 · Conformance: latency + silent-downgrade fingerprinting
 
-Status: blocked · Type: AFK · Label: ready-for-agent · Branch: issue/05-conform-latency-fingerprint
+Status: in-progress · Type: AFK · Label: ready-for-agent · Branch: issue/05-conform-latency-fingerprint
 
 ## What to build
 

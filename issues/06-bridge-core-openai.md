@@ -1,6 +1,6 @@
 # 06 · Bridge core + OpenAI-compatible proxy
 
-Status: blocked · Type: AFK · Label: ready-for-agent · Branch: issue/06-bridge-core-openai
+Status: in-progress · Type: AFK · Label: ready-for-agent · Branch: issue/06-bridge-core-openai
 
 ## What to build
 

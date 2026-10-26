@@ -1,6 +1,6 @@
 # 15 · Evidence pack generator
 
-Status: blocked · Type: AFK · Label: ready-for-agent · Branch: issue/15-evidence-pack
+Status: in-progress · Type: AFK · Label: ready-for-agent · Branch: issue/15-evidence-pack
 
 ## What to build
 

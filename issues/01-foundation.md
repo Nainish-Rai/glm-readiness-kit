@@ -1,6 +1,6 @@
 # 01 · Foundation tracer bullet
 
-Status: review · Type: AFK · Label: ready-for-agent · Branch: issue/01-foundation
+Status: done · Type: AFK · Label: ready-for-agent · Branch: issue/01-foundation
 
 ## What to build
 

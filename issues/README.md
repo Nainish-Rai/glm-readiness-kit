@@ -5,21 +5,21 @@ Statuses: `ready` → `in-progress` → `review` → `done` (or `blocked`). Labe
 
 | # | Issue | Type | Blocked by | Status |
 |---|---|---|---|---|
-| 01 | [Foundation tracer bullet](01-foundation.md) | AFK | none | review |
-| 02 | [Conformance: tool-call cases + scorecard](02-conform-tools.md) | AFK | 01 | blocked |
-| 03 | [Conformance: wire, errors, Anthropic endpoint](03-conform-wire-anthropic.md) | AFK | 01 | blocked |
-| 04 | [Conformance: thinking, streaming, cache, language](04-conform-thinking-stream.md) | AFK | 01 | blocked |
-| 05 | [Conformance: latency + downgrade fingerprinting](05-conform-latency-fingerprint.md) | AFK | 01 | blocked |
-| 06 | [Bridge core + OpenAI-compatible proxy](06-bridge-core-openai.md) | AFK | 01 | blocked |
+| 01 | [Foundation tracer bullet](01-foundation.md) | AFK | none | done |
+| 02 | [Conformance: tool-call cases + scorecard](02-conform-tools.md) | AFK | 01 | in-progress |
+| 03 | [Conformance: wire, errors, Anthropic endpoint](03-conform-wire-anthropic.md) | AFK | 01 | in-progress |
+| 04 | [Conformance: thinking, streaming, cache, language](04-conform-thinking-stream.md) | AFK | 01 | in-progress |
+| 05 | [Conformance: latency + downgrade fingerprinting](05-conform-latency-fingerprint.md) | AFK | 01 | in-progress |
+| 06 | [Bridge core + OpenAI-compatible proxy](06-bridge-core-openai.md) | AFK | 01 | in-progress |
 | 07 | [Bridge: Anthropic Messages path](07-bridge-anthropic.md) | AFK | 06 | blocked |
 | 08 | [Bridge: LiteLLM plugin adapter](08-bridge-litellm.md) | AFK | 06 | blocked |
 | 09 | [Spend and loop guard](09-guard.md) | AFK | 06 | blocked |
-| 10 | [Migration eval engine](10-eval-engine.md) | AFK | 01 | blocked |
-| 11 | [Trace importers](11-trace-importers.md) | AFK | 01 | blocked |
-| 12 | [Cost and cache forensics](12-cost-forensics.md) | AFK | 01 | blocked |
+| 10 | [Migration eval engine](10-eval-engine.md) | AFK | 01 | in-progress |
+| 11 | [Trace importers](11-trace-importers.md) | AFK | 01 | in-progress |
+| 12 | [Cost and cache forensics](12-cost-forensics.md) | AFK | 01 | in-progress |
 | 13 | [FDE workbench + demo golden sets](13-fde-workbench.md) | AFK | 10 | blocked |
-| 14 | [Deploy: sizing calculator + reference deployment](14-deploy.md) | AFK | 01 | blocked |
-| 15 | [Evidence pack generator](15-evidence-pack.md) | AFK | 01 | blocked |
+| 14 | [Deploy: sizing calculator + reference deployment](14-deploy.md) | AFK | 01 | in-progress |
+| 15 | [Evidence pack generator](15-evidence-pack.md) | AFK | 01 | in-progress |
 | 16 | [Live verification run](16-live-verification.md) | HITL | 02, 03, 04, 05 | blocked |
 | 17 | [Public readiness report + launch](17-public-report.md) | HITL | all | blocked |
 

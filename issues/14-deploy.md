@@ -1,6 +1,6 @@
 # 14 · Deploy: MoE sizing calculator + reference deployment
 
-Status: blocked · Type: AFK · Label: ready-for-agent · Branch: issue/14-deploy
+Status: in-progress · Type: AFK · Label: ready-for-agent · Branch: issue/14-deploy
 
 ## What to build
 

@@ -1,6 +1,6 @@
 # 12 · Cost and cache forensics
 
-Status: blocked · Type: AFK · Label: ready-for-agent · Branch: issue/12-cost-forensics
+Status: in-progress · Type: AFK · Label: ready-for-agent · Branch: issue/12-cost-forensics
 
 ## What to build
 
