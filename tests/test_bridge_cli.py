@@ -12,5 +12,7 @@ def test_bridge_cli_registered_and_validates() -> None:
     assert "cerebras" in r.invoke(app, ["bridge", "flavors"]).output
     bad = r.invoke(app, ["bridge", "serve", "--upstream", "no-such-profile"])
     assert bad.exit_code != 0
-    anth = r.invoke(app, ["bridge", "serve", "--upstream", "mock-anthropic"])
-    assert anth.exit_code != 0
+    # Anthropic-protocol profiles are served too since issue 07; a bad search backend is rejected before anything starts
+    assert "--search-backend" in r.invoke(app, ["bridge", "serve", "--help"]).output
+    bad_backend = r.invoke(app, ["bridge", "serve", "--upstream", "mock-anthropic", "--search-backend", "nope"])
+    assert bad_backend.exit_code != 0

@@ -2,6 +2,10 @@
 
 Reads every ``component: bridge`` envelope (one per ``glmkit bridge serve`` session); each ``fix_event`` item is
 one applied fix. Events carry no message content unless the session ran with ``--log-content``.
+
+Protocol filter: an event's protocol is ``details.protocol`` (``anthropic`` for the ``/v1/messages`` path of issue 07),
+otherwise ``openai``. The payload carries one ``views`` entry per protocol (and ``all``) so the chart, the top list,
+the KPI strip and the table all follow the filter.
 """
 
 from __future__ import annotations
@@ -15,6 +19,7 @@ from glmkit.report.registry import Page, RunRef, register_page
 
 BUCKET_SECONDS = (1, 5, 10, 30, 60, 300, 900, 3600, 6 * 3600, 86400)
 MAX_BUCKETS = 24
+PROTOCOLS = (("openai", "OpenAI chat"), ("anthropic", "Anthropic Messages"))
 MAX_SERIES = 7  # --cat-1..7, the rest fold into "other" (--cat-8)
 
 
@@ -47,6 +52,54 @@ def bucketize(events: list[dict[str, Any]]) -> tuple[list[str], list[dict[str, A
     return labels, series
 
 
+def protocol_of_event(d: dict[str, Any]) -> str:
+    return str((d.get("details") or {}).get("protocol") or "openai")
+
+
+def protocol_of_path(path: str | None) -> str:
+    p = (path or "").rstrip("/")
+    return "anthropic" if p.endswith(("/messages", "/messages/count_tokens")) else "openai"
+
+
+def make_view(events: list[dict[str, Any]], reqs: list[dict[str, Any]], sessions: int) -> dict[str, Any]:
+    labels, series = bucketize(events)
+    by_fix = Counter(e["fix_id"] for e in events)
+    failed = Counter(e["fix_id"] for e in events if not e["ok"])
+    top = [
+        {"fix_id": k, "title": FIX_TITLES.get(k, k), "count": v, "failed": failed.get(k, 0)}
+        for k, v in by_fix.most_common()
+    ]
+    fixed = sum(1 for r in reqs if r.get("fixes"))
+    unrepaired = by_fix.get("tool-args-unrepaired", 0)
+    return {
+        "count": len(events),
+        "labels": labels,
+        "series": series,
+        "top": top,
+        "kpis": [
+            {"label": "Fix events", "value": len(events), "sub": f"{len(by_fix)} fix type(s), {sessions} session(s)"},
+            {"label": "Requests", "value": len(reqs), "sub": "through the bridge"},
+            {
+                "label": "Requests fixed",
+                "value": (fixed / len(reqs)) if reqs else None,
+                "format": "pct",
+                "sub": f"{fixed} of {len(reqs)} needed at least one fix",
+            },
+            {
+                "label": "Retries",
+                "value": by_fix.get("tool-args-retry", 0),
+                "sub": "parse error injected, at most 1 per call",
+            },
+            {
+                "label": "Unrepaired",
+                "value": unrepaired,
+                "sub": "error returned, nothing substituted",
+                "tone": "err" if unrepaired else None,
+            },
+        ],
+    }
+
+
 @register_page
 class BridgePage(Page):
     id = "bridge"
@@ -60,12 +113,11 @@ class BridgePage(Page):
             return None
         events: list[dict[str, Any]] = []
         items: dict[str, Any] = {}
-        requests = fixed = 0
+        requests: list[dict[str, Any]] = []
         for ref in sessions:
             env = ref.envelope
-            reqs = env.data.get("requests") or []
-            requests += len(reqs)
-            fixed += sum(1 for r in reqs if r.get("fixes"))
+            for r in env.data.get("requests") or []:
+                requests.append({**r, "protocol": protocol_of_path(r.get("path"))})
             run = {
                 "run_id": env.run_id,
                 "started_at": env.started_at.isoformat(),
@@ -86,6 +138,7 @@ class BridgePage(Page):
                         "title": it.title,
                         "request_id": d.get("request_id"),
                         "upstream": d.get("upstream"),
+                        "protocol": protocol_of_event(d),
                         "before": d.get("before"),
                         "after": d.get("after"),
                         "ok": bool(d.get("ok", True)),
@@ -94,42 +147,21 @@ class BridgePage(Page):
                 )
                 items[key] = {"event": d, "title": it.title, "run": run}
         events.sort(key=lambda e: e["ts"], reverse=True)
-        labels, series = bucketize(events)
-        by_fix = Counter(e["fix_id"] for e in events)
-        failed = Counter(e["fix_id"] for e in events if not e["ok"])
-        top = [
-            {"fix_id": k, "title": FIX_TITLES.get(k, k), "count": v, "failed": failed.get(k, 0)}
-            for k, v in by_fix.most_common()
-        ]
-        retries = by_fix.get("tool-args-retry", 0)
-        unrepaired = by_fix.get("tool-args-unrepaired", 0)
+        seen = {e["protocol"] for e in events} | {r["protocol"] for r in requests}
+        protocols = [{"id": "all", "label": "All"}] + [{"id": i, "label": t} for i, t in PROTOCOLS if i in seen]
+        views = {"all": make_view(events, requests, len(sessions))}
+        for pr in protocols[1:]:
+            pid = pr["id"]
+            views[pid] = make_view(
+                [e for e in events if e["protocol"] == pid],
+                [r for r in requests if r["protocol"] == pid],
+                len(sessions),
+            )
         return {
-            "count": len(events),
-            "labels": labels,
-            "series": series,
-            "top": top,
+            **views["all"],
             "events": events,
             "items": items,
             "sessions": len(sessions),
-            "kpis": [
-                {
-                    "label": "Fix events",
-                    "value": len(events),
-                    "sub": f"{len(by_fix)} fix type(s), {len(sessions)} session(s)",
-                },
-                {"label": "Requests", "value": requests, "sub": "through the bridge"},
-                {
-                    "label": "Requests fixed",
-                    "value": (fixed / requests) if requests else None,
-                    "format": "pct",
-                    "sub": f"{fixed} of {requests} needed at least one fix",
-                },
-                {"label": "Retries", "value": retries, "sub": "parse error injected, at most 1 per call"},
-                {
-                    "label": "Unrepaired",
-                    "value": unrepaired,
-                    "sub": "error returned, nothing substituted",
-                    "tone": "err" if unrepaired else None,
-                },
-            ],
+            "protocols": protocols,
+            "views": views,
         }

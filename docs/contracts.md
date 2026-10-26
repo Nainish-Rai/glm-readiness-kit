@@ -626,6 +626,36 @@ and at shutdown. The **Bridge** dashboard tab (`report/pages/bridge.py|js`) read
 errors need no defect: the mock's default behaviour on the `api` class already rejects them.
 
 **Proof**: `uv run python tools/bridge-proof/proof.py --out results/bridge-demo` (OpenAI SDK loop, direct vs bridged).
+
+### 11.1 Anthropic Messages path (`glmkit.bridge.anthropic`, issue 07)
+
+`create_anthropic_app(ProxyConfig, options=AnthropicOptions(...))` is `proxy.create_app` plus `POST .../v1/messages`
+and `.../v1/messages/count_tokens` (through `extra_routes`; the handlers read `app.state.core/emitter/recorder`).
+`glmkit bridge serve` uses it, so one process serves OpenAI SDKs (`/v1`) and Anthropic SDK / Claude Code
+(`ANTHROPIC_BASE_URL=http://host:port`). The upstream follows the endpoint profile's protocol: `anthropic_messages`
+(Z.ai's Anthropic endpoint; fixed and forwarded; the OpenAI route then answers 400 `bridge_wrong_protocol`) or
+`openai_chat` (translated through the core's rewriters and stream rewriter).
+
+| Piece | Where | Notes |
+|---|---|---|
+| Translation | `anthropic/translate.py` | `to_openai_request`, `from_openai_response`, `OpenAIStreamTranslator` (chunks -> `message_start` ... `message_stop`), `events_from_message` (replay), `sign()`: bridge-generated thinking signature (HMAC, `glmkit-v1.`), replay is lenient |
+| Request rewriters | `anthropic/rewriters.py`, `COMMON` + `NATIVE` | same `(ctx, body) -> body` contract as the core's. Add a fix: append to `AnthropicOptions.extra_rewriters` |
+| Token estimate | `anthropic/tokens.py` | `features()` + `TokenCalibrator` (ridge least squares per model over upstream usage). `count_tokens` is always answered locally |
+| web_search | `anthropic/websearch.py` | `SearchBackend` protocol (`async search(query, *, max_results)`); `FakeSearchBackend` is offline and deterministic; no backend = strip. CLI `--search-backend none|fake|module:factory` |
+| Middleware | unchanged hooks | sees the *upstream wire shape*; `ctx.extras["protocol"] == "anthropic"`, `ctx.extras["wire"]` is `anthropic_messages` or `openai_chat`; `on_finish` always gets OpenAI-shaped usage |
+
+Fix events from this path carry `details.protocol == "anthropic"` (the Bridge tab's protocol filter; events without
+it count as `openai`). New fix ids: `anthropic-max-tokens-default`, `anthropic-tool-input-repair`,
+`anthropic-usage-inject`, `anthropic-count-tokens`, `anthropic-history-repair`, `anthropic-web-search-emulate`,
+`anthropic-web-search-run`, `anthropic-web-search-strip`; the shared `thinking-disabled-to-low`, `effort-clamp`,
+`tool-args-*` fire here too. `message_start` carries a calibrated estimate (OpenAI streams report usage last; Z.ai's
+sends 0); the final `message_delta` carries real usage. A web_search emulation streams as a replay of the finished
+message. Not done: repair of broken tool-argument JSON inside a *native* Anthropic stream, `anthropic-beta` forwarding.
+
+**Mock defects**: `bridge-anthropic-zero-start-usage`, `-array-input-500`, `-missing-max-tokens-500`, `-inflated-count`.
+**Proof**: `uv run python tools/bridge-proof/anthropic_proof.py --out results/bridge-demo` (session in
+`tests/anthropic_session.py`).
+
 ## 12. Error taxonomy (`glmkit.zai_errors`, slice 03)
 
 One small module maps a Z.ai business code (table in research/01-conformance.md §2.5) to what a caller needs to
@@ -682,7 +712,7 @@ output, and reports per task type whether each candidate is non-inferior to the 
 workbench and the licensed demo sets on top of this section. Quick start on the mock:
 `glmkit eval demo --out eval-demo` prints a ready `glmkit eval run ...` command.
 
-### 9.1 `glmkit eval run`
+### 13.1 `glmkit eval run`
 
 ```text
 glmkit eval run --set SET --baseline PROFILE --targets P1,P2@low,P3@max [--judge PROFILE] [--out results]
@@ -706,7 +736,7 @@ glmkit eval run --set SET --baseline PROFILE --targets P1,P2@low,P3@max [--judge
   is `incomplete`. Judge calls are not metered against the cap (judge cost is not logged).
 - Calls are non-streaming: latency is total request time (TTFT is not measured).
 
-### 9.2 Golden set format
+### 13.2 Golden set format
 
 YAML or JSON (`SET.yaml`), model `glmkit.eval.goldenset.GoldenSet`:
 
@@ -738,7 +768,7 @@ response is the judge's fallback reference, `trace_id` is the cluster and rows w
 false` are skipped. A grader is taken from the item, else `graders[task_type]`, else `graders["*"]`, else `exact`
 (has `expected`) or `judge` (has a recorded response).
 
-### 9.3 Graders (`glmkit.eval.graders`)
+### 13.3 Graders (`glmkit.eval.graders`)
 
 `@grader("name")` on `async def fn(ctx: GradeContext) -> Grade` in a module of `glmkit/eval/graders/` (or a plugin).
 `GradeContext`: `item`, `config` (the grader dict), `output` (final text; tool calls render as JSON when there is
@@ -762,7 +792,7 @@ blind (answer A / B only), its model family is compared with every target's (`da
 warns on self-preference), a consistent win by an answer 1.3x longer than the other is flagged `longer_won`,
 and verdicts are cached by (judge model, rubric, content hash). `--judge PROFILE` is required when any item uses it.
 
-### 9.4 Result envelope (`component: "eval"`)
+### 13.4 Result envelope (`component: "eval"`)
 
 - `items`: one `ItemResult` per (item, target): `id "<item>@<target>"`, `group` = item id, `kind "eval_item"`,
   `category` = task type, `target`, `status` pass (mean score over replays > 0.5) / fail / throttled / skip
@@ -787,7 +817,7 @@ lower bound is above `-margin`, `inferior` if the upper bound is below it, else 
 items the CLT half-width would need. Fewer than `--min-items` paired items is always inconclusive. Task-type
 intervals are unadjusted; McNemar p-values carry Holm-adjusted `p_holm`.
 
-### 9.5 Prices (`glmkit.eval.pricing`)
+### 13.5 Prices (`glmkit.eval.pricing`)
 
 Cost is recomputed from the one price table (section 10, `glmkit.cost.prices`; the eval engine keeps no price file).
 `glmkit.eval.pricing.PriceTable` is a thin view: `cost_usd(model, provider, usage) -> float | None`, `version`, and
@@ -796,7 +826,7 @@ Cost is recomputed from the one price table (section 10, `glmkit.cost.prices`; t
 convention); output includes reasoning. A model without a price has cost `not logged` (null), never zero. The mock
 incumbent's illustrative price is a `mock: true` entry in the same table.
 
-### 9.6 Mock targets with planted quality (`glmkit.mock.defects.eval_quality`)
+### 13.6 Mock targets with planted quality (`glmkit.mock.defects.eval_quality`)
 
 Per-request mock behaviours, switched on in a profile's `headers` (so one mock server plays the incumbent, a worse
 and an equal candidate): `X-GLMKit-Defects: eval-oracle,degrade-quality` plus `X-GLMKit-Degrade-Rate`,
@@ -806,7 +836,7 @@ and an equal candidate): `X-GLMKit-Defects: eval-oracle,degrade-quality` plus `X
 (`X-GLMKit-Throttle-Every`) returns 429/1302 on every N-th request. The module also registers the mock-only models
 `mock-incumbent-1` and `mock-judge-1`. `glmkit eval demo` writes a golden set and profiles that use them.
 
-### 9.7 Dashboard
+### 13.7 Dashboard
 
 The Migration tab (`report/pages/migration.*`) shows the newest eval run: KPI strip (quality delta, cost delta,
 p50 latency delta, verdict) for the selected candidate, the per-task-type table with CI bars against the margin

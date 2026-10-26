@@ -27,6 +27,15 @@ FIX_TITLES: dict[str, str] = {
     "reasoning-normalize": "upstream reasoning field renamed to reasoning_content for the client",
     "error-classify": "upstream error mapped to a standard HTTP status / retry hint",
     "error-sanitize": "non-JSON upstream error (possible internal leak) replaced by a clean error",
+    # Anthropic Messages path (glmkit.bridge.anthropic, issue 07); the shared fixes above also fire on that path
+    "anthropic-max-tokens-default": "max_tokens missing on /v1/messages: default injected (hosts answer 500)",
+    "anthropic-tool-input-repair": "tool_use.input that is not an object (array, string, null) rewritten as an object",
+    "anthropic-usage-inject": "zero usage in message_start / response replaced by a calibrated input-token estimate",
+    "anthropic-count-tokens": "count_tokens answered by the calibrated local estimator",
+    "anthropic-history-repair": "server-tool blocks and orphan tool_results in the history made valid for the upstream",
+    "anthropic-web-search-emulate": "server-side web_search offered as a function tool and searched by the bridge",
+    "anthropic-web-search-run": "web_search emulation ran searches and returned server_tool_use + result blocks",
+    "anthropic-web-search-strip": "server-side web_search tool removed (no search backend configured)",
 }
 FAILED_FIXES = frozenset({"tool-args-unrepaired"})
 

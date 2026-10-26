@@ -1,0 +1,1178 @@
+{
+  "requests": {
+    "basic": {
+      "anthropic": {
+        "model": "glm-5.3",
+        "max_tokens": 64,
+        "system": [
+          {
+            "type": "text",
+            "text": "Be brief.",
+            "cache_control": {
+              "type": "ephemeral"
+            }
+          },
+          {
+            "type": "text",
+            "text": "No emoji."
+          }
+        ],
+        "messages": [
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "text",
+                "text": "Say OK"
+              }
+            ]
+          }
+        ],
+        "thinking": {
+          "type": "disabled"
+        },
+        "stop_sequences": [
+          "END"
+        ],
+        "temperature": 0.5,
+        "stream": true
+      },
+      "openai": {
+        "model": "glm-5.3",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Be brief.No emoji."
+          },
+          {
+            "role": "user",
+            "content": "Say OK"
+          }
+        ],
+        "max_tokens": 64,
+        "temperature": 0.5,
+        "stop": [
+          "END"
+        ],
+        "thinking": {
+          "type": "disabled"
+        },
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        }
+      }
+    },
+    "tool-loop": {
+      "anthropic": {
+        "model": "glm-5.3",
+        "max_tokens": 2048,
+        "system": "You are a coding agent.",
+        "thinking": {
+          "type": "adaptive"
+        },
+        "output_config": {
+          "effort": "high"
+        },
+        "tools": [
+          {
+            "name": "get_weather",
+            "description": "Weather for a city",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "city": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "city"
+              ]
+            }
+          },
+          {
+            "type": "web_search_20250305",
+            "name": "web_search"
+          }
+        ],
+        "tool_choice": {
+          "type": "any",
+          "disable_parallel_tool_use": true
+        },
+        "messages": [
+          {
+            "role": "user",
+            "content": "Weather in Paris?"
+          },
+          {
+            "role": "assistant",
+            "content": [
+              {
+                "type": "thinking",
+                "thinking": "I should call the tool.",
+                "signature": "sig-from-before"
+              },
+              {
+                "type": "text",
+                "text": "Checking."
+              },
+              {
+                "type": "tool_use",
+                "id": "toolu_1",
+                "name": "get_weather",
+                "input": {
+                  "city": "Paris"
+                }
+              }
+            ]
+          },
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "tool_result",
+                "tool_use_id": "toolu_1",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "sunny"
+                  }
+                ]
+              },
+              {
+                "type": "text",
+                "text": "and tomorrow?"
+              }
+            ]
+          }
+        ]
+      },
+      "openai": {
+        "model": "glm-5.3",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a coding agent."
+          },
+          {
+            "role": "user",
+            "content": "Weather in Paris?"
+          },
+          {
+            "role": "assistant",
+            "content": "Checking.",
+            "reasoning_content": "I should call the tool.",
+            "tool_calls": [
+              {
+                "id": "toolu_1",
+                "type": "function",
+                "function": {
+                  "name": "get_weather",
+                  "arguments": "{\"city\": \"Paris\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "toolu_1",
+            "content": "sunny"
+          },
+          {
+            "role": "user",
+            "content": "and tomorrow?"
+          }
+        ],
+        "max_tokens": 2048,
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "get_weather",
+              "description": "Weather for a city",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "city": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "city"
+                ]
+              }
+            }
+          }
+        ],
+        "tool_choice": "required",
+        "parallel_tool_calls": false,
+        "thinking": {
+          "type": "enabled",
+          "clear_thinking": false
+        },
+        "reasoning_effort": "high"
+      }
+    },
+    "image-and-error-result": {
+      "anthropic": {
+        "model": "glm-5.3",
+        "max_tokens": 100,
+        "tool_choice": {
+          "type": "tool",
+          "name": "get_weather"
+        },
+        "tools": [
+          {
+            "name": "get_weather",
+            "description": "Weather for a city",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "city": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "city"
+              ]
+            }
+          }
+        ],
+        "messages": [
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "image",
+                "source": {
+                  "type": "base64",
+                  "media_type": "image/png",
+                  "data": "AAAA"
+                }
+              },
+              {
+                "type": "text",
+                "text": "what is this"
+              }
+            ]
+          },
+          {
+            "role": "assistant",
+            "content": [
+              {
+                "type": "tool_use",
+                "id": "toolu_9",
+                "name": "get_weather",
+                "input": {}
+              }
+            ]
+          },
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "tool_result",
+                "tool_use_id": "toolu_9",
+                "is_error": true,
+                "content": "boom"
+              }
+            ]
+          }
+        ]
+      },
+      "openai": {
+        "model": "glm-5.3",
+        "messages": [
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "image_url",
+                "image_url": {
+                  "url": "data:image/png;base64,AAAA"
+                }
+              },
+              {
+                "type": "text",
+                "text": "what is this"
+              }
+            ]
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "toolu_9",
+                "type": "function",
+                "function": {
+                  "name": "get_weather",
+                  "arguments": "{}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "toolu_9",
+            "content": "[error] boom"
+          }
+        ],
+        "max_tokens": 100,
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "get_weather",
+              "description": "Weather for a city",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "city": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "city"
+                ]
+              }
+            }
+          }
+        ],
+        "tool_choice": {
+          "type": "function",
+          "function": {
+            "name": "get_weather"
+          }
+        }
+      }
+    }
+  },
+  "responses": {
+    "thinking-and-text": {
+      "openai": {
+        "model": "glm-5.3",
+        "choices": [
+          {
+            "finish_reason": "stop",
+            "message": {
+              "role": "assistant",
+              "content": "OK",
+              "reasoning_content": "The user wants OK."
+            }
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 120,
+          "completion_tokens": 30,
+          "total_tokens": 150,
+          "prompt_tokens_details": {
+            "cached_tokens": 100
+          }
+        }
+      },
+      "anthropic": {
+        "id": "msg_golden",
+        "type": "message",
+        "role": "assistant",
+        "model": "glm-5.3",
+        "content": [
+          {
+            "type": "thinking",
+            "thinking": "The user wants OK.",
+            "signature": "glmkit-v1.2e07d720c67cb5e451c9f536de6d75a1"
+          },
+          {
+            "type": "text",
+            "text": "OK"
+          }
+        ],
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "usage": {
+          "input_tokens": 20,
+          "output_tokens": 30,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 100
+        }
+      }
+    },
+    "tool-calls": {
+      "openai": {
+        "model": "glm-5.3",
+        "choices": [
+          {
+            "finish_reason": "tool_calls",
+            "message": {
+              "role": "assistant",
+              "content": null,
+              "tool_calls": [
+                {
+                  "id": "call_1",
+                  "type": "function",
+                  "function": {
+                    "name": "get_weather",
+                    "arguments": "{\"city\": \"Paris\"}"
+                  }
+                },
+                {
+                  "id": "call_2",
+                  "type": "function",
+                  "function": {
+                    "name": "get_weather",
+                    "arguments": "{\"city\": \"Rome\"}"
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 120,
+          "completion_tokens": 30,
+          "total_tokens": 150,
+          "prompt_tokens_details": {
+            "cached_tokens": 100
+          }
+        }
+      },
+      "anthropic": {
+        "id": "msg_golden",
+        "type": "message",
+        "role": "assistant",
+        "model": "glm-5.3",
+        "content": [
+          {
+            "type": "tool_use",
+            "id": "call_1",
+            "name": "get_weather",
+            "input": {
+              "city": "Paris"
+            }
+          },
+          {
+            "type": "tool_use",
+            "id": "call_2",
+            "name": "get_weather",
+            "input": {
+              "city": "Rome"
+            }
+          }
+        ],
+        "stop_reason": "tool_use",
+        "stop_sequence": null,
+        "usage": {
+          "input_tokens": 20,
+          "output_tokens": 30,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 100
+        }
+      }
+    },
+    "length": {
+      "openai": {
+        "model": "glm-5.3",
+        "choices": [
+          {
+            "finish_reason": "length",
+            "message": {
+              "role": "assistant",
+              "content": "truncated"
+            }
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 10,
+          "completion_tokens": 64
+        }
+      },
+      "anthropic": {
+        "id": "msg_golden",
+        "type": "message",
+        "role": "assistant",
+        "model": "glm-5.3",
+        "content": [
+          {
+            "type": "text",
+            "text": "truncated"
+          }
+        ],
+        "stop_reason": "max_tokens",
+        "stop_sequence": null,
+        "usage": {
+          "input_tokens": 10,
+          "output_tokens": 64,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0
+        }
+      }
+    }
+  },
+  "streams": {
+    "text-with-reasoning": {
+      "openai": [
+        {
+          "id": "chatcmpl-1",
+          "object": "chat.completion.chunk",
+          "model": "glm-5.3",
+          "choices": [
+            {
+              "index": 0,
+              "delta": {
+                "role": "assistant"
+              },
+              "finish_reason": null
+            }
+          ]
+        },
+        {
+          "id": "chatcmpl-1",
+          "object": "chat.completion.chunk",
+          "model": "glm-5.3",
+          "choices": [
+            {
+              "index": 0,
+              "delta": {
+                "reasoning_content": "Think "
+              },
+              "finish_reason": null
+            }
+          ]
+        },
+        {
+          "id": "chatcmpl-1",
+          "object": "chat.completion.chunk",
+          "model": "glm-5.3",
+          "choices": [
+            {
+              "index": 0,
+              "delta": {
+                "reasoning_content": "hard."
+              },
+              "finish_reason": null
+            }
+          ]
+        },
+        {
+          "id": "chatcmpl-1",
+          "object": "chat.completion.chunk",
+          "model": "glm-5.3",
+          "choices": [
+            {
+              "index": 0,
+              "delta": {
+                "content": "Hel"
+              },
+              "finish_reason": null
+            }
+          ]
+        },
+        {
+          "id": "chatcmpl-1",
+          "object": "chat.completion.chunk",
+          "model": "glm-5.3",
+          "choices": [
+            {
+              "index": 0,
+              "delta": {
+                "content": "lo"
+              },
+              "finish_reason": null
+            }
+          ]
+        },
+        {
+          "id": "chatcmpl-1",
+          "object": "chat.completion.chunk",
+          "model": "glm-5.3",
+          "choices": [
+            {
+              "index": 0,
+              "delta": {},
+              "finish_reason": "stop"
+            }
+          ],
+          "usage": {
+            "prompt_tokens": 120,
+            "completion_tokens": 30,
+            "total_tokens": 150,
+            "prompt_tokens_details": {
+              "cached_tokens": 100
+            }
+          }
+        },
+        "[DONE]"
+      ],
+      "anthropic": [
+        {
+          "type": "message_start",
+          "message": {
+            "id": "msg_golden",
+            "type": "message",
+            "role": "assistant",
+            "model": "glm-5.3",
+            "content": [],
+            "stop_reason": null,
+            "stop_sequence": null,
+            "usage": {
+              "output_tokens": 1,
+              "input_tokens": 77,
+              "cache_read_input_tokens": 0
+            }
+          }
+        },
+        {
+          "type": "ping"
+        },
+        {
+          "type": "content_block_start",
+          "index": 0,
+          "content_block": {
+            "type": "thinking",
+            "thinking": "",
+            "signature": ""
+          }
+        },
+        {
+          "type": "content_block_delta",
+          "index": 0,
+          "delta": {
+            "type": "thinking_delta",
+            "thinking": "Think "
+          }
+        },
+        {
+          "type": "content_block_delta",
+          "index": 0,
+          "delta": {
+            "type": "thinking_delta",
+            "thinking": "hard."
+          }
+        },
+        {
+          "type": "content_block_delta",
+          "index": 0,
+          "delta": {
+            "type": "signature_delta",
+            "signature": "glmkit-v1.7ff38cf05cfc1b62c2612813781ee68a"
+          }
+        },
+        {
+          "type": "content_block_stop",
+          "index": 0
+        },
+        {
+          "type": "content_block_start",
+          "index": 1,
+          "content_block": {
+            "type": "text",
+            "text": ""
+          }
+        },
+        {
+          "type": "content_block_delta",
+          "index": 1,
+          "delta": {
+            "type": "text_delta",
+            "text": "Hel"
+          }
+        },
+        {
+          "type": "content_block_delta",
+          "index": 1,
+          "delta": {
+            "type": "text_delta",
+            "text": "lo"
+          }
+        },
+        {
+          "type": "content_block_stop",
+          "index": 1
+        },
+        {
+          "type": "message_delta",
+          "delta": {
+            "stop_reason": "end_turn",
+            "stop_sequence": null
+          },
+          "usage": {
+            "input_tokens": 20,
+            "output_tokens": 30,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 100
+          }
+        },
+        {
+          "type": "message_stop"
+        }
+      ]
+    },
+    "tool-call-whole": {
+      "openai": [
+        {
+          "id": "chatcmpl-1",
+          "object": "chat.completion.chunk",
+          "model": "glm-5.3",
+          "choices": [
+            {
+              "index": 0,
+              "delta": {
+                "role": "assistant"
+              },
+              "finish_reason": null
+            }
+          ]
+        },
+        {
+          "id": "chatcmpl-1",
+          "object": "chat.completion.chunk",
+          "model": "glm-5.3",
+          "choices": [
+            {
+              "index": 0,
+              "delta": {
+                "content": "Checking."
+              },
+              "finish_reason": null
+            }
+          ]
+        },
+        {
+          "id": "chatcmpl-1",
+          "object": "chat.completion.chunk",
+          "model": "glm-5.3",
+          "choices": [
+            {
+              "index": 0,
+              "delta": {
+                "tool_calls": [
+                  {
+                    "index": 0,
+                    "id": "call_1",
+                    "type": "function",
+                    "function": {
+                      "name": "get_weather",
+                      "arguments": "{\"city\": \"Paris\"}"
+                    }
+                  }
+                ]
+              },
+              "finish_reason": null
+            }
+          ]
+        },
+        {
+          "id": "chatcmpl-1",
+          "object": "chat.completion.chunk",
+          "model": "glm-5.3",
+          "choices": [
+            {
+              "index": 0,
+              "delta": {},
+              "finish_reason": "tool_calls"
+            }
+          ],
+          "usage": {
+            "prompt_tokens": 120,
+            "completion_tokens": 30,
+            "total_tokens": 150,
+            "prompt_tokens_details": {
+              "cached_tokens": 100
+            }
+          }
+        },
+        "[DONE]"
+      ],
+      "anthropic": [
+        {
+          "type": "message_start",
+          "message": {
+            "id": "msg_golden",
+            "type": "message",
+            "role": "assistant",
+            "model": "glm-5.3",
+            "content": [],
+            "stop_reason": null,
+            "stop_sequence": null,
+            "usage": {
+              "output_tokens": 1,
+              "input_tokens": 77,
+              "cache_read_input_tokens": 0
+            }
+          }
+        },
+        {
+          "type": "ping"
+        },
+        {
+          "type": "content_block_start",
+          "index": 0,
+          "content_block": {
+            "type": "text",
+            "text": ""
+          }
+        },
+        {
+          "type": "content_block_delta",
+          "index": 0,
+          "delta": {
+            "type": "text_delta",
+            "text": "Checking."
+          }
+        },
+        {
+          "type": "content_block_stop",
+          "index": 0
+        },
+        {
+          "type": "content_block_start",
+          "index": 1,
+          "content_block": {
+            "type": "tool_use",
+            "id": "call_1",
+            "name": "get_weather",
+            "input": {}
+          }
+        },
+        {
+          "type": "content_block_delta",
+          "index": 1,
+          "delta": {
+            "type": "input_json_delta",
+            "partial_json": "{\"city\": \"Paris\"}"
+          }
+        },
+        {
+          "type": "content_block_stop",
+          "index": 1
+        },
+        {
+          "type": "message_delta",
+          "delta": {
+            "stop_reason": "tool_use",
+            "stop_sequence": null
+          },
+          "usage": {
+            "input_tokens": 20,
+            "output_tokens": 30,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 100
+          }
+        },
+        {
+          "type": "message_stop"
+        }
+      ]
+    },
+    "tool-call-fragments-usage-last": {
+      "openai": [
+        {
+          "id": "chatcmpl-1",
+          "object": "chat.completion.chunk",
+          "model": "glm-5.3",
+          "choices": [
+            {
+              "index": 0,
+              "delta": {
+                "tool_calls": [
+                  {
+                    "index": 0,
+                    "id": "call_1",
+                    "type": "function",
+                    "function": {
+                      "name": "get_weather",
+                      "arguments": ""
+                    }
+                  }
+                ]
+              },
+              "finish_reason": null
+            }
+          ]
+        },
+        {
+          "id": "chatcmpl-1",
+          "object": "chat.completion.chunk",
+          "model": "glm-5.3",
+          "choices": [
+            {
+              "index": 0,
+              "delta": {
+                "tool_calls": [
+                  {
+                    "index": 0,
+                    "function": {
+                      "arguments": "{\"city\""
+                    }
+                  }
+                ]
+              },
+              "finish_reason": null
+            }
+          ]
+        },
+        {
+          "id": "chatcmpl-1",
+          "object": "chat.completion.chunk",
+          "model": "glm-5.3",
+          "choices": [
+            {
+              "index": 0,
+              "delta": {
+                "tool_calls": [
+                  {
+                    "index": 0,
+                    "function": {
+                      "arguments": ": \"Paris\"}"
+                    }
+                  }
+                ]
+              },
+              "finish_reason": null
+            }
+          ]
+        },
+        {
+          "id": "chatcmpl-1",
+          "object": "chat.completion.chunk",
+          "model": "glm-5.3",
+          "choices": [
+            {
+              "index": 0,
+              "delta": {},
+              "finish_reason": "tool_calls"
+            }
+          ]
+        },
+        {
+          "id": "chatcmpl-1",
+          "object": "chat.completion.chunk",
+          "model": "glm-5.3",
+          "choices": [],
+          "usage": {
+            "prompt_tokens": 120,
+            "completion_tokens": 30,
+            "total_tokens": 150,
+            "prompt_tokens_details": {
+              "cached_tokens": 100
+            }
+          }
+        },
+        "[DONE]"
+      ],
+      "anthropic": [
+        {
+          "type": "message_start",
+          "message": {
+            "id": "msg_golden",
+            "type": "message",
+            "role": "assistant",
+            "model": "glm-5.3",
+            "content": [],
+            "stop_reason": null,
+            "stop_sequence": null,
+            "usage": {
+              "output_tokens": 1,
+              "input_tokens": 77,
+              "cache_read_input_tokens": 0
+            }
+          }
+        },
+        {
+          "type": "ping"
+        },
+        {
+          "type": "content_block_start",
+          "index": 0,
+          "content_block": {
+            "type": "tool_use",
+            "id": "call_1",
+            "name": "get_weather",
+            "input": {}
+          }
+        },
+        {
+          "type": "content_block_delta",
+          "index": 0,
+          "delta": {
+            "type": "input_json_delta",
+            "partial_json": "{\"city\""
+          }
+        },
+        {
+          "type": "content_block_delta",
+          "index": 0,
+          "delta": {
+            "type": "input_json_delta",
+            "partial_json": ": \"Paris\"}"
+          }
+        },
+        {
+          "type": "content_block_stop",
+          "index": 0
+        },
+        {
+          "type": "message_delta",
+          "delta": {
+            "stop_reason": "tool_use",
+            "stop_sequence": null
+          },
+          "usage": {
+            "input_tokens": 20,
+            "output_tokens": 30,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 100
+          }
+        },
+        {
+          "type": "message_stop"
+        }
+      ]
+    }
+  },
+  "replay": {
+    "message": {
+      "id": "msg_golden",
+      "type": "message",
+      "role": "assistant",
+      "model": "glm-5.3",
+      "content": [
+        {
+          "type": "thinking",
+          "thinking": "The user wants OK.",
+          "signature": "glmkit-v1.2e07d720c67cb5e451c9f536de6d75a1"
+        },
+        {
+          "type": "text",
+          "text": "OK"
+        },
+        {
+          "type": "tool_use",
+          "id": "toolu_1",
+          "name": "get_weather",
+          "input": {
+            "city": "Paris"
+          }
+        }
+      ],
+      "stop_reason": "end_turn",
+      "stop_sequence": null,
+      "usage": {
+        "input_tokens": 20,
+        "output_tokens": 30,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 100
+      }
+    },
+    "events": [
+      {
+        "type": "message_start",
+        "message": {
+          "id": "msg_golden",
+          "type": "message",
+          "role": "assistant",
+          "model": "glm-5.3",
+          "usage": {
+            "input_tokens": 20,
+            "output_tokens": 1,
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 100
+          },
+          "content": [],
+          "stop_reason": null,
+          "stop_sequence": null
+        }
+      },
+      {
+        "type": "ping"
+      },
+      {
+        "type": "content_block_start",
+        "index": 0,
+        "content_block": {
+          "type": "thinking",
+          "thinking": "",
+          "signature": ""
+        }
+      },
+      {
+        "type": "content_block_delta",
+        "index": 0,
+        "delta": {
+          "type": "thinking_delta",
+          "thinking": "The user wants OK."
+        }
+      },
+      {
+        "type": "content_block_delta",
+        "index": 0,
+        "delta": {
+          "type": "signature_delta",
+          "signature": "glmkit-v1.2e07d720c67cb5e451c9f536de6d75a1"
+        }
+      },
+      {
+        "type": "content_block_stop",
+        "index": 0
+      },
+      {
+        "type": "content_block_start",
+        "index": 1,
+        "content_block": {
+          "type": "text",
+          "text": ""
+        }
+      },
+      {
+        "type": "content_block_delta",
+        "index": 1,
+        "delta": {
+          "type": "text_delta",
+          "text": "OK"
+        }
+      },
+      {
+        "type": "content_block_stop",
+        "index": 1
+      },
+      {
+        "type": "content_block_start",
+        "index": 2,
+        "content_block": {
+          "type": "tool_use",
+          "id": "toolu_1",
+          "name": "get_weather",
+          "input": {}
+        }
+      },
+      {
+        "type": "content_block_delta",
+        "index": 2,
+        "delta": {
+          "type": "input_json_delta",
+          "partial_json": "{\"city\": \"Paris\"}"
+        }
+      },
+      {
+        "type": "content_block_stop",
+        "index": 2
+      },
+      {
+        "type": "message_delta",
+        "delta": {
+          "stop_reason": "end_turn",
+          "stop_sequence": null
+        },
+        "usage": {
+          "input_tokens": 20,
+          "output_tokens": 30,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 100
+        }
+      },
+      {
+        "type": "message_stop"
+      }
+    ]
+  }
+}

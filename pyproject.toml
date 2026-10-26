@@ -23,6 +23,7 @@ glmkit = "glmkit.cli:main"
 
 [dependency-groups]
 dev = [
+    "anthropic>=2.3.0",
     "hypothesis>=6.170.11",
     "openai>=3.37.0",
     "pytest>=8.0",
