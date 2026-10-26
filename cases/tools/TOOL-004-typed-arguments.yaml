@@ -1,0 +1,46 @@
+schema_version: 1
+id: TOOL-004
+title: "Argument types survive: int stays int, null stays null, bool, enum, nested objects, arrays, unicode, empty {}"
+category: tools/types
+severity: major
+kind: deterministic
+applies_to:
+  models: [glm-5.3, glm-5.3-flash, glm-5.3-flashx, glm-5.2]
+  protocols: [openai_chat, anthropic_messages]
+  endpoint_classes: [api, plan, third_party, self_hosted]
+source:
+  issues: ["sgl-project/sglang#46037", "sgl-project/sglang#35564"]
+  urls:
+    - https://github.com/sgl-project/sglang/issues/46037
+    - https://github.com/sgl-project/sglang/issues/35564
+  spec:
+    - https://docs.z.ai/guides/capabilities/function-calling.md
+  first_seen: 2026-10-26
+modes: [nonstream, stream]
+request:
+  messages:
+    - role: user
+      content: >-
+        Record the event by calling record_event with exactly these arguments:
+        {"count": 3, "ratio": 0.25, "active": true, "note": null, "level": "mid",
+        "items": [{"sku": "A-1", "qty": 2}, {"sku": "B-9", "qty": 0}],
+        "meta": {"owner": "ops", "tags": ["x", "y"]}, "label": "caf\u00e9 \u65e5\u672c\u8a9e \ud83d\ude42"}
+  tools:
+    - $ref: fixtures/tools/record_event.json
+  tool_choice: auto
+  max_tokens: 400
+variants:
+  - id: empty-args
+    request:
+      messages:
+        - {role: user, content: "Check the service by calling ping with exactly these arguments: {}"}
+      tools:
+        - $ref: fixtures/tools/ping.json
+expect:
+  default:
+    - {check: http_status, equals: 200}
+    - {check: finish_reason, in: [tool_calls]}
+    - {check: tool_call_count, equals: 1}
+    - {check: tool_calls_valid}
+    - {check: tool_args_echo_prompt}
+notes: "Planted defect: typed-args-stringified (1 -> '1', null -> 'None')."

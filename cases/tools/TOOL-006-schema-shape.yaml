@@ -1,0 +1,60 @@
+schema_version: 1
+id: TOOL-006
+title: "Top-level oneOf with empty properties must not yield {} arguments (schema-shape A/B)"
+category: tools/schema-shape
+severity: critical
+kind: deterministic
+applies_to:
+  models: [glm-5.3, glm-5.3-flash, glm-5.3-flashx, glm-5.2]
+  protocols: [openai_chat, anthropic_messages]
+  endpoint_classes: [api, plan, third_party, self_hosted]
+source:
+  issues: ["zai-org/GLM-5#169"]
+  urls:
+    - https://github.com/zai-org/GLM-5/issues/169
+  spec:
+    - https://docs.z.ai/guides/capabilities/function-calling.md
+  first_seen: 2026-10-26
+modes: [nonstream, stream]
+request:
+  messages:
+    - {role: system, content: "You are a helpful assistant. Use tools to complete the task."}
+    - role: user
+      content: >-
+        Set automation 23-00 to mode view. Call automation_update with exactly these arguments:
+        {"id": "23-00", "mode": "view"}
+  tools:
+    - $ref: fixtures/tools/automation_update_oneof.json
+  tool_choice: auto
+  max_tokens: 300
+  params: {thinking: {type: enabled}}
+variants:
+  - id: flat
+    request:
+      tools:
+        - $ref: fixtures/tools/automation_update_flat.json
+    expect_class: control
+  - id: anyof
+    request:
+      tools:
+        - $ref: fixtures/tools/automation_update_anyof.json
+  - id: allof
+    request:
+      tools:
+        - $ref: fixtures/tools/automation_update_allof.json
+  - id: refs
+    request:
+      tools:
+        - $ref: fixtures/tools/automation_update_refs.json
+expect:
+  default:
+    - {check: http_status, equals: 200}
+    - {check: finish_reason, in: [tool_calls]}
+    - {check: tool_call_count, equals: 1, names: [automation_update]}
+    - {check: tool_calls_valid}
+    - {check: tool_arguments_nonempty_when_required}
+    - {check: tool_args_echo_prompt}
+notes: >
+  The base case is the oneOf shape from GLM-5#169; the flat variant is the control. Every shape must pass; the
+  Scorecard reports shape sensitivity as the flat pass rate minus the shape pass rate. Planted defect:
+  oneof-empty-args (only the oneOf shape breaks).

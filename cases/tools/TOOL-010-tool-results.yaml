@@ -1,0 +1,55 @@
+schema_version: 1
+id: TOOL-010
+title: "Tool results of any shape (JSON, empty string, 100 KB, error payload) are accepted and answered coherently"
+category: tools/roundtrip
+severity: major
+kind: deterministic
+executor: tool_shape
+executor_config: {tool_result_bytes: 102400}
+applies_to:
+  models: [glm-5.3, glm-5.3-flash, glm-5.3-flashx, glm-5.2]
+  protocols: [openai_chat, anthropic_messages]
+  endpoint_classes: [api, plan, third_party, self_hosted]
+source:
+  issues: []
+  urls:
+    - https://docs.z.ai/guides/capabilities/function-calling.md
+  spec:
+    - https://docs.z.ai/guides/capabilities/function-calling.md
+  first_seen: 2026-10-26
+modes: [nonstream]
+request:
+  messages:
+    - {"role": "user", "content": "What is the weather in Paris?"}
+    - {"role": "assistant", "content": null, "tool_calls": [{"id": "call_rt_1", "type": "function", "function": {"name": "get_weather", "arguments": "{\"city\": \"Paris\"}"}}]}
+    - {"role": "tool", "tool_call_id": "call_rt_1", "content": "{\"temp_c\": 18, \"sky\": \"clear\"}"}
+  tools:
+    - $ref: fixtures/tools/get_weather.json
+  max_tokens: 300
+variants:
+  - id: empty
+    request:
+      messages:
+        - {"role": "user", "content": "What is the weather in Paris?"}
+        - {"role": "assistant", "content": null, "tool_calls": [{"id": "call_rt_1", "type": "function", "function": {"name": "get_weather", "arguments": "{\"city\": \"Paris\"}"}}]}
+        - {"role": "tool", "tool_call_id": "call_rt_1", "content": ""}
+  - id: large-100kb
+    request:
+      messages:
+        - {"role": "user", "content": "What is the weather in Paris?"}
+        - {"role": "assistant", "content": null, "tool_calls": [{"id": "call_rt_1", "type": "function", "function": {"name": "get_weather", "arguments": "{\"city\": \"Paris\"}"}}]}
+        - {"role": "tool", "tool_call_id": "call_rt_1", "content": "{{PAD}}"}
+  - id: error
+    request:
+      messages:
+        - {"role": "user", "content": "What is the weather in Paris?"}
+        - {"role": "assistant", "content": null, "tool_calls": [{"id": "call_rt_1", "type": "function", "function": {"name": "get_weather", "arguments": "{\"city\": \"Paris\"}"}}]}
+        - {"role": "tool", "tool_call_id": "call_rt_1", "content": "{\"error\": \"upstream timeout\", \"retryable\": true}"}
+expect:
+  default:
+    - {check: http_status, equals: 200}
+    - {check: no_5xx}
+    - {check: no_internal_leak}
+    - {check: finish_reason, in: [stop]}
+    - {check: content_present}
+notes: "Planted defect: empty-tool-result-crash (variant empty)."

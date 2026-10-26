@@ -1,0 +1,11 @@
+{
+  "type": "function",
+  "function": {
+    "name": "ping",
+    "description": "Health check with no arguments.",
+    "parameters": {
+      "type": "object",
+      "properties": {}
+    }
+  }
+}

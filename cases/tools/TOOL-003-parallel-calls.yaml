@@ -1,0 +1,35 @@
+schema_version: 1
+id: TOOL-003
+title: "Two independent calls in one turn come back as two valid calls with distinct ids"
+category: tools/parallel
+severity: major
+kind: deterministic
+applies_to:
+  models: [glm-5.3, glm-5.3-flash, glm-5.3-flashx, glm-5.2]
+  protocols: [openai_chat, anthropic_messages]
+  endpoint_classes: [api, plan, third_party, self_hosted]
+source:
+  issues: ["ShishirPatil/gorilla (BFCL parallel)", "redd34/canitoolcall"]
+  urls:
+    - https://github.com/redd34/canitoolcall
+    - https://github.com/ShishirPatil/gorilla/tree/main/berkeley-function-call-leaderboard
+  spec:
+    - https://docs.z.ai/guides/capabilities/function-calling.md
+  first_seen: 2026-10-26
+modes: [nonstream, stream]
+request:
+  messages:
+    - {role: user, content: "Call get_weather for Paris and get_time for Tokyo in the same turn."}
+  tools:
+    - $ref: fixtures/tools/get_weather.json
+    - $ref: fixtures/tools/get_time.json
+  tool_choice: auto
+  max_tokens: 400
+expect:
+  default:
+    - {check: http_status, equals: 200}
+    - {check: finish_reason, in: [tool_calls]}
+    - {check: tool_call_count, equals: 2, names: [get_weather, get_time]}
+    - {check: tool_calls_valid}
+    - {check: tool_ids_unique}
+notes: "Planted defect: duplicate-tool-ids."

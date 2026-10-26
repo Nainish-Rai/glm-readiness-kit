@@ -1,0 +1,18 @@
+{
+  "type": "function",
+  "function": {
+    "name": "mcp__server__search_docs",
+    "description": "Search the documentation.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "query"
+      ]
+    }
+  }
+}

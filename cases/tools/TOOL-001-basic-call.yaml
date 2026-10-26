@@ -1,0 +1,39 @@
+schema_version: 1
+id: TOOL-001
+title: "A tool the user asks for is called: tool_calls finish, known name, arguments valid under Draft 2020-12 and Draft 7"
+category: tools/basic
+severity: critical
+kind: statistical
+applies_to:
+  models: [glm-5.3, glm-5.3-flash, glm-5.3-flashx, glm-5.2]
+  protocols: [openai_chat, anthropic_messages]
+  endpoint_classes: [api, plan, third_party, self_hosted]
+source:
+  issues: ["MoonshotAI/K2-Vendor-Verifier"]
+  urls:
+    - https://github.com/MoonshotAI/K2-Vendor-Verifier
+    - https://openrouter.ai/blog/announcements/provider-variance-introducing-exacto/
+  spec:
+    - https://docs.z.ai/guides/capabilities/function-calling.md
+  first_seen: 2026-10-26
+modes: [nonstream, stream]
+repeats: 20
+request:
+  messages:
+    - {role: system, content: "You are a helpful assistant. Use tools to complete the task."}
+    - {role: user, content: "What is the weather in Paris right now? Call get_weather."}
+  tools:
+    - $ref: fixtures/tools/get_weather.json
+  tool_choice: auto
+  max_tokens: 300
+expect:
+  default:
+    - {check: http_status, equals: 200}
+    - {check: finish_reason, in: [tool_calls]}
+    - {check: tool_call_count, equals: 1, names: [get_weather]}
+    - {check: tool_calls_valid}
+    - {check: pass_rate_wilson, gte: 0.95}
+tolerance: {reference: official_api, margin: {metric: pass_rate, delta: -0.05}}
+notes: >
+  Statistical: the same expectation on every endpoint class. A hard gate: the 20 attempts must pass at 95% or more
+  (point estimate; the Wilson 95% CI is reported). Planted defect: flaky-tool-call (every 4th call answered in text).

@@ -1,0 +1,43 @@
+schema_version: 1
+id: TOOL-014
+title: "After 3 failed calls the emitted command keeps the instructed `cd /srv/app && ` prefix"
+category: tools/emission-fidelity
+severity: minor
+kind: soak
+opt_in: true
+applies_to:
+  models: [glm-5.3, glm-5.3-flash, glm-5.3-flashx, glm-5.2]
+  protocols: [openai_chat, anthropic_messages]
+  endpoint_classes: [api, plan, third_party, self_hosted]
+source:
+  issues: ["zai-org/GLM-5#116"]
+  urls:
+    - https://github.com/zai-org/GLM-5/issues/116
+  first_seen: 2026-10-26
+modes: [nonstream]
+repeats: 10
+request:
+  messages:
+    - {"role": "system", "content": "You are a coding agent. Always run commands from the project root /srv/app."}
+    - {"role": "user", "content": "Push the branch."}
+    - {"role": "assistant", "content": null, "tool_calls": [{"id": "call_pf_0", "type": "function", "function": {"name": "run_shell", "arguments": "{\"command\": \"git push origin main\"}"}}]}
+    - {"role": "tool", "tool_call_id": "call_pf_0", "content": "fatal: not a git repository (or any of the parent directories): .git"}
+    - {"role": "assistant", "content": null, "tool_calls": [{"id": "call_pf_1", "type": "function", "function": {"name": "run_shell", "arguments": "{\"command\": \"git push origin main\"}"}}]}
+    - {"role": "tool", "tool_call_id": "call_pf_1", "content": "fatal: not a git repository (or any of the parent directories): .git"}
+    - {"role": "assistant", "content": null, "tool_calls": [{"id": "call_pf_2", "type": "function", "function": {"name": "run_shell", "arguments": "{\"command\": \"git push origin main\"}"}}]}
+    - {"role": "tool", "tool_call_id": "call_pf_2", "content": "fatal: not a git repository (or any of the parent directories): .git"}
+    - {"role": "user", "content": "Retry from the project root. Call run_shell with exactly these arguments: {\"command\": \"cd /srv/app && git push origin main\"}"}
+  tools:
+    - $ref: fixtures/tools/run_shell.json
+  tool_choice: auto
+  max_tokens: 300
+expect:
+  default:
+    - {check: http_status, equals: 200}
+    - {check: tool_call_count, equals: 1}
+    - {check: tool_calls_valid}
+    - {check: tool_arg_startswith, arg: command, prefix: "cd /srv/app && "}
+    - {check: pass_rate_wilson, gte: 0.9}
+notes: >
+  Opt-in soak (run with --include-opt-in or name TOOL-014): the original report saw the prefix dropped 10 times in
+  a row over ~450 turns. Planted defect: command-prefix-dropped.

@@ -1,0 +1,18 @@
+{
+  "type": "function",
+  "function": {
+    "name": "ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss",
+    "description": "Search the documentation.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "query"
+      ]
+    }
+  }
+}

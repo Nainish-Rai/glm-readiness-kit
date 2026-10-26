@@ -1,0 +1,26 @@
+{
+  "type": "function",
+  "function": {
+    "name": "automation_update",
+    "description": "Update an automation.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "view",
+            "edit"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "mode"
+      ]
+    }
+  }
+}

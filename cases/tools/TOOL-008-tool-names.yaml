@@ -1,0 +1,58 @@
+schema_version: 1
+id: TOOL-008
+title: "Tool names with namespaces, dashes, dots and 64 characters come back exactly as offered (no UnknownName)"
+category: tools/name
+severity: major
+kind: deterministic
+applies_to:
+  models: [glm-5.3, glm-5.3-flash, glm-5.3-flashx, glm-5.2]
+  protocols: [openai_chat, anthropic_messages]
+  endpoint_classes: [api, plan, third_party, self_hosted]
+source:
+  issues: []
+  urls:
+    - https://openrouter.ai/blog/announcements/provider-variance-introducing-exacto/
+    - https://github.com/vllm-project/vllm/blob/main/tests/tool_parsers/test_glm47_moe_tool_parser.py
+  first_seen: 2026-10-26
+modes: [nonstream, stream]
+request:
+  messages:
+    - {role: user, content: "Search the docs by calling mcp__server__search_docs with exactly these arguments: {\"query\": \"rate limit\"}"}
+  tools:
+    - $ref: fixtures/tools/search_ns.json
+  tool_choice: auto
+  max_tokens: 300
+variants:
+  - id: dash
+    request:
+      messages:
+        - {role: user, content: "Search the docs by calling search-docs with exactly these arguments: {\"query\": \"rate limit\"}"}
+      tools:
+        - $ref: fixtures/tools/search_dash.json
+  - id: long64
+    request:
+      messages:
+        - {role: user, content: "Search the docs by calling ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss with exactly these arguments: {\"query\": \"rate limit\"}"}
+      tools:
+        - $ref: fixtures/tools/search_long.json
+  - id: dot
+    request:
+      messages:
+        - {role: user, content: "Search the docs by calling search.docs with exactly these arguments: {\"query\": \"rate limit\"}"}
+      tools:
+        - $ref: fixtures/tools/search_dot.json
+    expect:
+      default:
+        - {check: http_status, equals: 200, soft: true}
+        - {check: tool_call_count, equals: 1, soft: true}
+        - {check: tool_calls_valid, soft: true}
+expect:
+  default:
+    - {check: http_status, equals: 200}
+    - {check: finish_reason, in: [tool_calls]}
+    - {check: tool_call_count, equals: 1}
+    - {check: tool_calls_valid}
+    - {check: tool_args_echo_prompt}
+notes: >
+  tool_calls_valid reports UnknownName when the returned name is not one of the offered tools. The dotted name
+  is outside Anthropic's name pattern, so that variant only records (soft). Planted defect: unknown-tool-name.

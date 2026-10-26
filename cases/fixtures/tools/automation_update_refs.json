@@ -1,0 +1,34 @@
+{
+  "type": "function",
+  "function": {
+    "name": "automation_update",
+    "description": "Update an automation.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Id"
+        },
+        "mode": {
+          "$ref": "#/$defs/Mode"
+        }
+      },
+      "required": [
+        "id",
+        "mode"
+      ],
+      "$defs": {
+        "Id": {
+          "type": "string"
+        },
+        "Mode": {
+          "type": "string",
+          "enum": [
+            "view",
+            "edit"
+          ]
+        }
+      }
+    }
+  }
+}

@@ -14,6 +14,7 @@ import math
 import re
 from typing import Any
 
+from glmkit.mock import toolsim
 from glmkit.mock.types import (
     CanonRequest,
     ErrorReply,
@@ -442,10 +443,13 @@ def generate(ctx: MockContext) -> Reply:
     content: str | None
     tool_calls: list[ToolCallOut] = []
     finish = "stop"
-    tool = _pick_tool(req, user_text) if last.role == "user" else None
-    if tool is not None:
-        args = json.dumps(example_args(tool.parameters, user_text), ensure_ascii=False)
-        tool_calls.append(ToolCallOut(id=f"call_{rid[:16]}_0", name=tool.name, arguments=args))
+    planned = toolsim.plan_calls(req, user_text) if last.role == "user" else []
+    if planned:
+        for i, (tool, exact) in enumerate(planned):
+            args = json.dumps(
+                exact if exact is not None else example_args(tool.parameters, user_text), ensure_ascii=False
+            )
+            tool_calls.append(ToolCallOut(id=f"call_{rid[:16]}_{i}", name=tool.name, arguments=args))
         content, finish = None, "tool_calls"
     elif last.role == "tool" or last.tool_results:
         result = last.tool_results[-1]["content"] if last.tool_results else ""
