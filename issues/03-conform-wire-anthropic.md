@@ -1,6 +1,6 @@
 # 03 · Conformance: wire contract, errors, Anthropic endpoint
 
-Status: review · Type: AFK · Label: ready-for-agent · Branch: issue/03-conform-wire-anthropic
+Status: done · Type: AFK · Label: ready-for-agent · Branch: issue/03-conform-wire-anthropic
 
 ## What to build
 

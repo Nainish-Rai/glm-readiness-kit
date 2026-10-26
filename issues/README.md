@@ -7,7 +7,7 @@ Statuses: `ready` → `in-progress` → `review` → `done` (or `blocked`). Labe
 |---|---|---|---|---|
 | 01 | [Foundation tracer bullet](01-foundation.md) | AFK | none | done |
 | 02 | [Conformance: tool-call cases + scorecard](02-conform-tools.md) | AFK | 01 | in-progress |
-| 03 | [Conformance: wire, errors, Anthropic endpoint](03-conform-wire-anthropic.md) | AFK | 01 | in-progress |
+| 03 | [Conformance: wire, errors, Anthropic endpoint](03-conform-wire-anthropic.md) | AFK | 01 | done |
 | 04 | [Conformance: thinking, streaming, cache, language](04-conform-thinking-stream.md) | AFK | 01 | in-progress |
 | 05 | [Conformance: latency + downgrade fingerprinting](05-conform-latency-fingerprint.md) | AFK | 01 | done |
 | 06 | [Bridge core + OpenAI-compatible proxy](06-bridge-core-openai.md) | AFK | 01 | done |
