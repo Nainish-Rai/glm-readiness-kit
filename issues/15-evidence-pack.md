@@ -1,6 +1,6 @@
 # 15 · Evidence pack generator
 
-Status: review · Type: AFK · Label: ready-for-agent · Branch: issue/15-evidence-pack
+Status: done · Type: AFK · Label: ready-for-agent · Branch: issue/15-evidence-pack
 
 ## What to build
 
