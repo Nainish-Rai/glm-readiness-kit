@@ -1,0 +1,64 @@
+schema_version: 1
+id: THINK-002
+title: 'thinking: replaying truncated, edited or reordered reasoning does not crash the host; cache loss is recorded'
+category: thinking/replay
+severity: major
+kind: deterministic
+executor: replay_compare
+executor_config:
+  seed_turns: 1
+  replay: reasoning_content
+  branches:
+  - label: exact
+    mutation: none
+  - label: truncated
+    mutation: truncate
+  - label: edited
+    mutation: edit
+  - label: reordered
+    mutation: reorder
+applies_to:
+  models:
+  - glm-5.3
+  - glm-5.3-flash
+source:
+  issues: []
+  urls:
+  - https://docs.z.ai/guides/capabilities/thinking.md
+  - https://docs.z.ai/api-reference/llm/chat-completion
+  spec:
+  - https://docs.z.ai/guides/capabilities/thinking.md
+  - https://docs.z.ai/api-reference/llm/chat-completion
+  first_seen: '2026-10-01'
+modes:
+- nonstream
+request:
+  messages:
+  - role: system
+    content: You are a coding agent. Use the bash tool to inspect the workspace.
+  - role: user
+    content: Run `ls -la` with the bash tool, then report what you see.
+  tools:
+  - $ref: fixtures/agentloop/tools-bash.json
+  max_tokens: 512
+  params:
+    thinking:
+      type: enabled
+      clear_thinking: false
+expect:
+  default:
+  - check: all_turns_ok
+  - check: cached_tokens_not_above
+    a: truncated
+    b: exact
+    soft: true
+  - check: cached_tokens_not_above
+    a: edited
+    b: exact
+    soft: true
+  - check: cached_tokens_not_above
+    a: reordered
+    b: exact
+    soft: true
+notes: Quality of the answer after edited reasoning is not scored here; the evidence keeps every branch's cached_tokens
+  so the drop can be read.

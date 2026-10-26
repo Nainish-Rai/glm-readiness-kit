@@ -1,0 +1,29 @@
+schema_version: 1
+id: STRM-004
+title: 'stream: a recorded tool-call stream reassembles to the non-stream result for 1-char, 1-token and odd chunk
+  splits and any fragment interleaving'
+category: stream/reassembly
+severity: major
+kind: deterministic
+executor: stream_fixture
+executor_config:
+  fixture:
+    $ref: fixtures/agentloop/typed-args-ok.json
+source:
+  issues:
+  - sgl-project/sglang#35564
+  urls:
+  - https://github.com/sgl-project/sglang/issues/35564
+  spec: []
+  first_seen: '2026-09-28'
+modes:
+- nonstream
+request:
+  messages:
+  - role: user
+    content: offline fixture; no request is sent
+expect:
+  default:
+  - check: stream_split_independent
+notes: 'Offline: no request is sent. The fixture holds two interleaved tool calls (empty {} arguments and typed
+  arguments) and is cut 8 ways in 3 fragment orders through the real SSE parser and accumulator.'

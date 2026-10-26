@@ -1,0 +1,40 @@
+schema_version: 1
+id: THINK-007
+title: 'thinking: three identical temperature-0 requests with a seed return identical output'
+category: thinking/determinism
+severity: minor
+kind: fingerprint
+executor: repeat_identical
+executor_config:
+  n: 3
+applies_to:
+  models:
+  - glm-5.3
+  - glm-5.3-flash
+source:
+  issues:
+  - vllm-project/vllm#56868
+  urls:
+  - https://github.com/vllm-project/vllm/issues/56868
+  spec: []
+  first_seen: '2026-10-09'
+modes:
+- nonstream
+request:
+  messages:
+  - role: user
+    content: Name three prime numbers and say why they are prime.
+  max_tokens: 256
+  temperature: 0
+  top_p: 1
+  params:
+    seed: 42
+    thinking:
+      type: enabled
+expect:
+  default:
+  - check: all_turns_ok
+  - check: identical_outputs
+    min_rate: 1.0
+notes: Self-hosted runs also send do_sample:false. The official API's own self-agreement (the noise floor) is recorded
+  by the slice 05 reference run; until then 1.0 is the bar.

@@ -1,0 +1,67 @@
+schema_version: 1
+id: THINK-005
+title: 'thinking: replaying drifted (''= the'') reasoning must not collapse the next answer; the prose control must
+  never collapse'
+category: thinking/degeneracy
+severity: major
+kind: statistical
+executor: styled_replay
+executor_config:
+  turns: 8
+  words: 60
+  styles:
+    styled: styled
+    prose-control: prose
+applies_to:
+  models:
+  - glm-5.3
+  - glm-5.3-flash
+source:
+  issues:
+  - zai-org/GLM-5#168
+  - vllm-project/vllm#56868
+  urls:
+  - https://github.com/zai-org/GLM-5/issues/168
+  - https://github.com/vllm-project/vllm/issues/56868
+  spec: []
+  first_seen: '2026-10-05'
+modes:
+- nonstream
+repeats: 20
+request:
+  messages:
+  - role: user
+    content: 'unused: the executor builds the history'
+  tools:
+  - $ref: fixtures/agentloop/tools-bash.json
+  max_tokens: 600
+  temperature: 1.0
+  top_p: 0.95
+  params:
+    thinking:
+      type: enabled
+      clear_thinking: false
+    reasoning_effort: max
+variants:
+- id: prose-control
+  expect_class: control
+  expect:
+    default:
+    - check: reasoning_degeneracy
+      max: 0.2
+    - check: no_replacement_chars
+    - check: no_empty_length_stop
+    - check: pass_rate
+      gte: 1.0
+expect:
+  default:
+  - check: reasoning_degeneracy
+    max: 0.2
+  - check: no_replacement_chars
+  - check: no_empty_length_stop
+  - check: pass_rate
+    gte: 1.0
+    soft: true
+notes: 'History: 8 assistant turns, 60 words of reasoning each, replayed with reasoning_content. The base item (styled)
+  is the GLM-5#168 repro (about 64% ''='' / ''the'' words); ''prose-control'' must show 0 collapses. The styled
+  collapse rate is recorded as a soft result (GLM-5.3 non-flash was 0/20, flash 11/26 upstream).'

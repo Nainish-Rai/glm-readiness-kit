@@ -1,0 +1,45 @@
+schema_version: 1
+id: STRM-001
+title: 'stream: a typed tool call streams the same tool name, argument JSON and finish_reason as the non-stream
+  response'
+category: stream/parity
+severity: major
+kind: deterministic
+executor: stream_pair
+executor_config:
+  warmups: 0
+applies_to:
+  models:
+  - glm-5.3
+  - glm-5.3-flash
+source:
+  issues:
+  - sgl-project/sglang#35564
+  urls:
+  - https://github.com/sgl-project/sglang/issues/35564
+  spec:
+  - https://docs.z.ai/guides/capabilities/stream-tool
+  first_seen: '2026-10-01'
+modes:
+- nonstream
+request:
+  messages:
+  - role: user
+    content: Use get_weather for city Paris for 3 days in metric units.
+  tools:
+  - $ref: fixtures/agentloop/tools-typed.json
+  max_tokens: 300
+  temperature: 0
+  params:
+    thinking:
+      type: enabled
+expect:
+  default:
+  - check: all_turns_ok
+  - check: sse_terminates
+    exchange: stream
+  - check: stream_nonstream_parity
+    a: nonstream
+    b: stream
+notes: Typed arguments (integer, boolean) make a stringifying stream parser visible. Run against the TOOL-001..005
+  shapes of slice 02 with `--cases` on both ids to cover every tool case in both modes.

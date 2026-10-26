@@ -1,0 +1,41 @@
+schema_version: 1
+id: STRM-005
+title: 'stream: usage in the stream equals the non-stream usage for the same request (+/-1%), including cached_tokens'
+category: stream/usage
+severity: major
+kind: deterministic
+executor: stream_pair
+executor_config:
+  warmups: 1
+applies_to:
+  models:
+  - glm-5.3
+  - glm-5.3-flash
+source:
+  issues:
+  - zai-org/GLM-5#139
+  urls:
+  - https://github.com/zai-org/GLM-5/issues/139
+  spec: []
+  first_seen: '2026-10-12'
+modes:
+- nonstream
+request:
+  messages:
+  - role: system
+    content: You are a terse assistant.
+  - role: user
+    content: Reply with the single word OK.
+  max_tokens: 64
+  temperature: 0
+  params:
+    thinking:
+      type: enabled
+expect:
+  default:
+  - check: all_turns_ok
+  - check: usage_parity
+    a: nonstream
+    b: stream
+    tolerance: 0.01
+notes: One warm-up request makes both measured requests see the same prefix-cache state.

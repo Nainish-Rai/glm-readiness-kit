@@ -1,0 +1,47 @@
+schema_version: 1
+id: LANG-002
+title: 'language: a Japanese-only conversation is answered in Japanese, not Chinese or English'
+category: language
+severity: major
+kind: statistical
+executor: agent_loop
+executor_config:
+  turns: 10
+  replay: reasoning_content
+  tool_output: 'ステップ {turn}: コマンドは終了コード 0 で正常に完了しました。出力は三行です。'
+  followups:
+  - 次に、リポジトリの状態を確認してください。
+  - テストファイルの数を数えて報告してください。
+applies_to:
+  models:
+  - glm-5.3
+  - glm-5.3-flash
+source:
+  issues:
+  - zai-org/GLM-5#54
+  urls:
+  - https://github.com/zai-org/GLM-5/issues/54
+  spec: []
+  first_seen: '2026-08-20'
+modes:
+- nonstream
+request:
+  messages:
+  - role: system
+    content: あなたは慎重なコーディングエージェントです。日本語だけで答え、bash ツールでワークスペースを確認してください。
+  - role: user
+    content: bash ツールで ls -la を実行して、見つかったものを日本語で教えてください。
+  tools:
+  - $ref: fixtures/agentloop/tools-bash.json
+  max_tokens: 512
+  params:
+    thinking:
+      type: enabled
+      clear_thinking: false
+expect:
+  default:
+  - check: all_turns_ok
+  - check: output_language_matches
+    scope: all
+    language: ja
+notes: The answer's script (kana present = Japanese; Han only = Chinese) must match the context.

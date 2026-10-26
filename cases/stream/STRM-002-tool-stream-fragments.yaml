@@ -1,0 +1,52 @@
+schema_version: 1
+id: STRM-002
+title: 'stream: with tool_stream a 4 KB tool argument arrives in several indexed fragments that reassemble to the
+  non-stream arguments'
+category: stream/tool_stream
+severity: major
+kind: deterministic
+executor: stream_pair
+executor_config:
+  warmups: 0
+  stream_params:
+    tool_stream: true
+applies_to:
+  models:
+  - glm-5.3
+  - glm-5.3-flash
+  protocols:
+  - openai_chat
+source:
+  issues:
+  - charmbracelet/crush#3153
+  urls:
+  - https://github.com/charmbracelet/crush/issues/3153
+  spec:
+  - https://docs.z.ai/guides/capabilities/stream-tool
+  first_seen: '2026-09-20'
+modes:
+- nonstream
+request:
+  messages:
+  - $ref: fixtures/agentloop/prompt-write-file-4kb.json
+  tools:
+  - $ref: fixtures/agentloop/tools-write-file.json
+  tool_choice: auto
+  max_tokens: 8192
+  temperature: 0
+  params:
+    thinking:
+      type: enabled
+expect:
+  default:
+  - check: all_turns_ok
+  - check: sse_terminates
+    exchange: stream
+  - check: tool_stream_fragments
+    exchange: stream
+    min_fragments: 2
+    compare: nonstream
+  - check: stream_nonstream_parity
+    a: nonstream
+    b: stream
+notes: The prompt carries a 4096-character value so the model must emit a large argument.

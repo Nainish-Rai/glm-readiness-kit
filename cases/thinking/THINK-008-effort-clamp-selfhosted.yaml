@@ -1,0 +1,42 @@
+schema_version: 1
+id: THINK-008
+title: 'thinking (self-hosted): reasoning_effort ''medium'' is accepted; whether the template clamps it to max is
+  recorded'
+category: thinking/effort-clamp
+severity: info
+kind: fingerprint
+executor: param_sweep
+executor_config:
+  param: reasoning_effort
+  values:
+  - low
+  - medium
+  - high
+  - max
+applies_to:
+  models:
+  - glm-5.3
+  - glm-5.3-flash
+  endpoint_classes:
+  - self_hosted
+source:
+  issues:
+  - vllm-project/vllm#56868
+  urls:
+  - https://github.com/vllm-project/vllm/issues/56868
+  spec: []
+  first_seen: '2026-10-09'
+modes:
+- nonstream
+request:
+  messages:
+  - role: user
+    content: Explain in two sentences why the sky is blue.
+  max_tokens: 600
+  params:
+    thinking:
+      type: enabled
+expect:
+  default:
+  - check: effort_clamp_observed
+notes: Informational and self-hosted only. The vLLM chat template maps any effort outside {low, high} to max.

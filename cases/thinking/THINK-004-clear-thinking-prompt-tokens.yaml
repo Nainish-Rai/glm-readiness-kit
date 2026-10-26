@@ -1,0 +1,59 @@
+schema_version: 1
+id: THINK-004
+title: 'thinking: clear_thinking:true ignores replayed reasoning, so the turn bills fewer prompt tokens than clear_thinking:false'
+category: thinking/clear
+severity: minor
+kind: deterministic
+executor: replay_compare
+executor_config:
+  seed_turns: 1
+  replay: reasoning_content
+  branches:
+  - label: clear_true
+    params:
+      thinking:
+        type: enabled
+        clear_thinking: true
+  - label: clear_false
+    params:
+      thinking:
+        type: enabled
+        clear_thinking: false
+applies_to:
+  models:
+  - glm-5.3
+  - glm-5.3-flash
+  endpoint_classes:
+  - api
+  - third_party
+  - self_hosted
+source:
+  issues: []
+  urls:
+  - https://docs.z.ai/guides/capabilities/thinking.md
+  - https://docs.z.ai/api-reference/llm/chat-completion
+  spec:
+  - https://docs.z.ai/guides/capabilities/thinking.md
+  - https://docs.z.ai/api-reference/llm/chat-completion
+  first_seen: '2026-10-01'
+modes:
+- nonstream
+request:
+  messages:
+  - role: system
+    content: You are a coding agent. Use the bash tool to inspect the workspace.
+  - role: user
+    content: Run `ls -la` with the bash tool, then report what you see.
+  tools:
+  - $ref: fixtures/agentloop/tools-bash.json
+  max_tokens: 512
+  params:
+    thinking:
+      type: enabled
+expect:
+  default:
+  - check: all_turns_ok
+  - check: prompt_tokens_lower
+    a: clear_true
+    b: clear_false
+notes: Coding Plan keeps reasoning by default and is excluded.
