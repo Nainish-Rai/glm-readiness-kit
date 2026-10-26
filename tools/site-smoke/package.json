@@ -1,0 +1,8 @@
+{
+  "name": "glmkit-site-smoke",
+  "private": true,
+  "description": "Headless smoke test for a built glmkit dashboard: console errors, tabs, drawer, overflow at 1440/390 px.",
+  "type": "module",
+  "scripts": { "smoke": "node smoke.mjs" },
+  "dependencies": { "playwright-core": "1.58.2" }
+}

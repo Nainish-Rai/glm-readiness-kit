@@ -1,0 +1,32 @@
+schema_version: 1
+id: WIRE-002
+title: "thinking: enabled + reasoning_effort: low answers 200 with reasoning and a normal stop"
+category: wire
+severity: critical
+kind: deterministic
+applies_to:
+  models: [glm-5.3, glm-5.3-flash]
+  protocols: [openai_chat, anthropic_messages]
+source:
+  issues: ["farion1231/cc-switch#6737"]
+  urls: ["https://github.com/farion1231/cc-switch/issues/6737"]
+  spec: ["https://docs.z.ai/guides/capabilities/thinking.md"]
+  first_seen: 2026-10-01
+modes: [nonstream, stream]
+request:
+  messages:
+    - {role: user, content: "Reply OK"}
+  max_tokens: 256
+  params:
+    thinking: {type: enabled}
+    reasoning_effort: low
+expect:
+  default:
+    - {check: http_status, equals: 200}
+    - {check: no_internal_leak}
+    - {check: reasoning_present}
+    - {check: finish_reason, in: [stop]}
+    - {check: usage_present}
+    - {check: model_field_equals_request}
+    - {check: sse_terminates}
+notes: The working alternative to WIRE-001 that harnesses should send for low-effort helper requests.

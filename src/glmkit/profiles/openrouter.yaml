@@ -1,0 +1,11 @@
+name: openrouter
+title: OpenRouter, GLM-5.3
+provider: openrouter
+base_url: https://openrouter.ai/api/v1
+protocol: openai_chat
+endpoint_class: third_party
+model: z-ai/glm-5.3
+model_family: glm-5.3
+api_key_env: OPENROUTER_API_KEY
+notes: Model slug is UNVERIFIED; confirm with `GET /api/v1/models` before a live run (issue 16).
+sources: ["https://openrouter.ai/docs"]

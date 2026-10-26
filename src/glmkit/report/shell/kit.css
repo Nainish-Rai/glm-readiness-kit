@@ -1,0 +1,30 @@
+/* Kit shell styles. Tokens only (no literal colours); motion uses --dur-* tokens. */
+html { scroll-behavior: smooth; }
+.dr-main { padding: var(--space-4); overflow: auto; display: grid; gap: var(--space-4); align-content: start; min-width: 0; }
+.dr-body .detail { overflow: auto; }
+.ev { display: grid; gap: var(--space-2); min-width: 0; }
+.ev + .ev { border-top: 1px solid var(--edge); padding-top: var(--space-4); }
+.ev h4 { margin: 0; font-size: var(--text-body); color: var(--fg-emph); display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap; }
+.ev .url { color: var(--fg-meta); font-family: var(--font-mono); font-size: var(--text-meta); overflow-wrap: anywhere; }
+.ev-pre { margin: 0; white-space: pre-wrap; word-break: break-word; max-height: 420px; overflow: auto; }
+.chk { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px var(--space-2); align-items: baseline; font-size: 12px; }
+.chk .name { color: var(--fg-emph); font-family: var(--font-mono); }
+.chk .msg { grid-column: 2; color: var(--fg-meta); overflow-wrap: anywhere; }
+.cell-btn { background: none; border: 0; padding: 0; cursor: pointer; border-radius: var(--radius-1); transition: opacity var(--dur-micro); }
+.cell-btn:hover { opacity: .8; }
+.case-id { font-family: var(--font-mono); color: var(--fg-emph); white-space: nowrap; }
+.case-title { display: block; color: var(--fg-meta); font-size: var(--text-meta); max-width: 360px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.list-plain { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: 12px; }
+.list-plain li { display: flex; gap: var(--space-2); align-items: center; min-width: 0; }
+.list-plain a { overflow-wrap: anywhere; }
+@media (max-width: 900px) {
+  /* one scrolling column: evidence first, checks after (the component default gives evidence a sliver) */
+  .dr-body { overflow: auto; grid-template-rows: auto auto; }
+  .dr-main { overflow: visible; }
+  .dr-body .detail { max-height: none; overflow: visible; }
+}
+@media (max-width: 520px) { .case-title { max-width: 180px; } }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .cell-btn { transition: none; }
+}

@@ -1,0 +1,10 @@
+name: zai-plan-anthropic
+title: Z.ai Coding Plan, Anthropic-compatible
+provider: zai
+base_url: https://api.z.ai/api/anthropic
+protocol: anthropic_messages
+endpoint_class: plan
+model: glm-5.3
+api_key_env: ZAI_CODING_PLAN_KEY
+notes: Same URL as the API Anthropic path; a Coding Plan key bills plan quota.
+sources: ["research/01-conformance.md §2.2", "https://docs.z.ai/devpack/tool/claude"]

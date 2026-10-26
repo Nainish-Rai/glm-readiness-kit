@@ -1,0 +1,470 @@
+{
+  "$defs": {
+    "AppliesTo": {
+      "additionalProperties": false,
+      "properties": {
+        "endpoint_classes": {
+          "anyOf": [
+            {
+              "items": {
+                "enum": [
+                  "api",
+                  "plan",
+                  "third_party",
+                  "self_hosted"
+                ],
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Endpoint Classes"
+        },
+        "harness_profiles": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Harness Profiles"
+        },
+        "models": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "None = any model",
+          "title": "Models"
+        },
+        "protocols": {
+          "anyOf": [
+            {
+              "items": {
+                "enum": [
+                  "openai_chat",
+                  "anthropic_messages",
+                  "responses"
+                ],
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Protocols"
+        }
+      },
+      "title": "AppliesTo",
+      "type": "object"
+    },
+    "CaseRequest": {
+      "additionalProperties": false,
+      "description": "Canonical request, OpenAI-chat flavoured; the client adapters translate it per protocol.",
+      "properties": {
+        "max_tokens": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Tokens"
+        },
+        "messages": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Messages",
+          "type": "array"
+        },
+        "model": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Default: the target profile's model",
+          "title": "Model"
+        },
+        "omit": {
+          "description": "Top-level body keys to delete after translation",
+          "items": {
+            "type": "string"
+          },
+          "title": "Omit",
+          "type": "array"
+        },
+        "overrides": {
+          "additionalProperties": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "description": "Per-protocol deep-merge applied last: {anthropic_messages: {...}}",
+          "title": "Overrides",
+          "type": "object"
+        },
+        "params": {
+          "additionalProperties": true,
+          "description": "Merged verbatim into the body (thinking ...)",
+          "title": "Params",
+          "type": "object"
+        },
+        "stop": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Stop"
+        },
+        "temperature": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Temperature"
+        },
+        "tool_choice": {
+          "default": null,
+          "title": "Tool Choice"
+        },
+        "tools": {
+          "anyOf": [
+            {
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "OpenAI {type: function, function: {...}} or shorthand {name, description, parameters}",
+          "title": "Tools"
+        },
+        "top_p": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Top P"
+        }
+      },
+      "title": "CaseRequest",
+      "type": "object"
+    },
+    "CheckSpec": {
+      "additionalProperties": true,
+      "description": "``{check: <name>, <params...>, soft?: bool, when?: <CheckSpec>}``. Params are check-specific.",
+      "properties": {
+        "check": {
+          "title": "Check",
+          "type": "string"
+        },
+        "soft": {
+          "default": false,
+          "description": "A failure is recorded as soft_fail and does not fail the run",
+          "title": "Soft",
+          "type": "boolean"
+        },
+        "when": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CheckSpec"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Precondition; the check is skipped unless it passes"
+        }
+      },
+      "required": [
+        "check"
+      ],
+      "title": "CheckSpec",
+      "type": "object"
+    },
+    "Source": {
+      "additionalProperties": false,
+      "properties": {
+        "first_seen": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "First Seen"
+        },
+        "issues": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Issues",
+          "type": "array"
+        },
+        "spec": {
+          "description": "Doc URLs used as the oracle",
+          "items": {
+            "type": "string"
+          },
+          "title": "Spec",
+          "type": "array"
+        },
+        "urls": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Urls",
+          "type": "array"
+        }
+      },
+      "title": "Source",
+      "type": "object"
+    },
+    "Variant": {
+      "additionalProperties": false,
+      "properties": {
+        "expect": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "items": {
+                  "$ref": "#/$defs/CheckSpec"
+                },
+                "type": "array"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Replaces the case expect",
+          "title": "Expect"
+        },
+        "expect_class": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Free label, e.g. 'control'",
+          "title": "Expect Class"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "request": {
+          "additionalProperties": true,
+          "description": "Deep-merged into the case request",
+          "title": "Request",
+          "type": "object"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "Variant",
+      "type": "object"
+    }
+  },
+  "$id": "https://github.com/glm-readiness-kit/glmkit/schemas/conformance-case.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "applies_to": {
+      "$ref": "#/$defs/AppliesTo"
+    },
+    "category": {
+      "title": "Category",
+      "type": "string"
+    },
+    "executor": {
+      "default": "single",
+      "description": "Registered executor name",
+      "title": "Executor",
+      "type": "string"
+    },
+    "executor_config": {
+      "additionalProperties": true,
+      "description": "Free-form executor parameters",
+      "title": "Executor Config",
+      "type": "object"
+    },
+    "expect": {
+      "additionalProperties": {
+        "items": {
+          "$ref": "#/$defs/CheckSpec"
+        },
+        "type": "array"
+      },
+      "description": "Check lists by endpoint class; 'default' always applies",
+      "title": "Expect",
+      "type": "object"
+    },
+    "id": {
+      "pattern": "^[A-Z]+-[0-9]{3}[A-Za-z0-9-]*$",
+      "title": "Id",
+      "type": "string"
+    },
+    "kind": {
+      "default": "deterministic",
+      "enum": [
+        "deterministic",
+        "statistical",
+        "soak",
+        "fingerprint"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "modes": {
+      "items": {
+        "enum": [
+          "nonstream",
+          "stream"
+        ],
+        "type": "string"
+      },
+      "title": "Modes",
+      "type": "array"
+    },
+    "notes": {
+      "default": "",
+      "title": "Notes",
+      "type": "string"
+    },
+    "opt_in": {
+      "default": false,
+      "description": "Only runs when selected explicitly (soak, costly cases)",
+      "title": "Opt In",
+      "type": "boolean"
+    },
+    "repeats": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Repeats",
+      "type": "integer"
+    },
+    "request": {
+      "$ref": "#/$defs/CaseRequest"
+    },
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "severity": {
+      "enum": [
+        "critical",
+        "major",
+        "minor",
+        "info"
+      ],
+      "title": "Severity",
+      "type": "string"
+    },
+    "source": {
+      "$ref": "#/$defs/Source"
+    },
+    "tags": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Tags",
+      "type": "array"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    },
+    "tolerance": {
+      "additionalProperties": true,
+      "title": "Tolerance",
+      "type": "object"
+    },
+    "variants": {
+      "items": {
+        "$ref": "#/$defs/Variant"
+      },
+      "title": "Variants",
+      "type": "array"
+    }
+  },
+  "required": [
+    "id",
+    "title",
+    "category",
+    "severity",
+    "expect"
+  ],
+  "title": "ConformanceCase",
+  "type": "object"
+}

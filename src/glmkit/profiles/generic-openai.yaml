@@ -1,0 +1,10 @@
+name: generic-openai
+title: Generic OpenAI-compatible host
+provider: generic
+base_url: ${GLMKIT_GENERIC_BASE_URL:-http://localhost:8000/v1}
+protocol: openai_chat
+endpoint_class: third_party
+model: glm-5.3
+api_key_env: GLMKIT_GENERIC_API_KEY
+api_key_required: false
+notes: Set GLMKIT_GENERIC_BASE_URL (and the key env var if the host needs one), or copy this file and edit it.

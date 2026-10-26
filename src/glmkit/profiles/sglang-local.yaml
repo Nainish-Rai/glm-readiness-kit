@@ -1,0 +1,12 @@
+name: sglang-local
+title: Local SGLang (self-hosted)
+provider: sglang
+base_url: ${GLMKIT_SGLANG_BASE_URL:-http://localhost:30000/v1}
+protocol: openai_chat
+endpoint_class: self_hosted
+model: zai-org/GLM-5.3-FP8
+model_family: glm-5.3
+api_key_env: SGLANG_API_KEY
+api_key_required: false
+notes: "Expected flags: --tool-call-parser glm47 --reasoning-parser glm45."
+sources: ["research/01-conformance.md §2.6"]

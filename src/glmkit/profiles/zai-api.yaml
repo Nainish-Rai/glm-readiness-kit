@@ -1,0 +1,10 @@
+name: zai-api
+title: Z.ai API (pay-as-you-go), OpenAI-compatible
+provider: zai
+base_url: https://api.z.ai/api/paas/v4
+protocol: openai_chat
+endpoint_class: api
+model: glm-5.3
+api_key_env: ZAI_API_KEY
+notes: Standard API key; bills the pay-as-you-go balance.
+sources: ["research/01-conformance.md §2.2", "https://docs.z.ai/api-reference/llm/chat-completion"]

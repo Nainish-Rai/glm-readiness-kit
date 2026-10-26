@@ -1,0 +1,10 @@
+name: zai-plan
+title: Z.ai Coding Plan, OpenAI-compatible
+provider: zai
+base_url: https://api.z.ai/api/coding/paas/v4
+protocol: openai_chat
+endpoint_class: plan
+model: glm-5.3
+api_key_env: ZAI_CODING_PLAN_KEY
+notes: Coding Plan key. Docs say thinking disabled is converted to effort low on this class (unverified live).
+sources: ["research/01-conformance.md §2.2, §2.4", "https://docs.z.ai/devpack/latest-model"]

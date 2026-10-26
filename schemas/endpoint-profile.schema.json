@@ -1,0 +1,147 @@
+{
+  "$id": "https://github.com/glm-readiness-kit/glmkit/schemas/endpoint-profile.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "A conformance / eval / bridge target.",
+  "properties": {
+    "api_key_env": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Name of the env var holding the key",
+      "title": "Api Key Env"
+    },
+    "api_key_required": {
+      "default": true,
+      "title": "Api Key Required",
+      "type": "boolean"
+    },
+    "auth_header": {
+      "anyOf": [
+        {
+          "enum": [
+            "bearer",
+            "x-api-key"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Default: bearer for openai_chat, x-api-key for anthropic_messages",
+      "title": "Auth Header"
+    },
+    "base_url": {
+      "description": "Base URL; the protocol path is appended. '{mock}' is replaced by an in-process mock URL. ${ENV:-default} references are expanded at load time (URLs only, never keys).",
+      "title": "Base Url",
+      "type": "string"
+    },
+    "endpoint_class": {
+      "enum": [
+        "api",
+        "plan",
+        "third_party",
+        "self_hosted"
+      ],
+      "title": "Endpoint Class",
+      "type": "string"
+    },
+    "headers": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "Extra non-secret request headers",
+      "title": "Headers",
+      "type": "object"
+    },
+    "model": {
+      "title": "Model",
+      "type": "string"
+    },
+    "model_family": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Canonical GLM model id for case applicability (default: derived from model)",
+      "title": "Model Family"
+    },
+    "name": {
+      "description": "Unique profile id, used as --target",
+      "title": "Name",
+      "type": "string"
+    },
+    "notes": {
+      "default": "",
+      "title": "Notes",
+      "type": "string"
+    },
+    "path": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Override the protocol path appended to base_url",
+      "title": "Path"
+    },
+    "protocol": {
+      "enum": [
+        "openai_chat",
+        "anthropic_messages"
+      ],
+      "title": "Protocol",
+      "type": "string"
+    },
+    "provider": {
+      "description": "zai | openrouter | vllm | sglang | generic | mock | ...",
+      "title": "Provider",
+      "type": "string"
+    },
+    "sources": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Sources",
+      "type": "array"
+    },
+    "spawn_mock": {
+      "default": false,
+      "description": "Start the mock GLM server in-process for this target",
+      "title": "Spawn Mock",
+      "type": "boolean"
+    },
+    "title": {
+      "default": "",
+      "title": "Title",
+      "type": "string"
+    }
+  },
+  "required": [
+    "name",
+    "provider",
+    "base_url",
+    "protocol",
+    "endpoint_class",
+    "model"
+  ],
+  "title": "EndpointProfile",
+  "type": "object"
+}

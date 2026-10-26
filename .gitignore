@@ -8,3 +8,5 @@ site/
 results/
 .env
 .env.*
+node_modules/
+shots/

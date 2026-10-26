@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observatory Components</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="components.css">
+<style>
+/* Gallery layout only. Every colour on this page comes from component classes or token names passed to components.js. */
+.g-head { max-width: 1240px; margin: 0 auto; padding: 28px 16px 4px; display: grid; gap: 6px; }
+.g-head h1 { margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -.015em; }
+.g-head p { margin: 0; max-width: 72ch; }
+.g-toc { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; margin-top: 8px; }
+.g-main { max-width: 1240px; margin: 0 auto; padding: 16px 16px 80px; }
+.g-sec .card-b { display: grid; gap: 14px; }
+.g-sec .well code { font: inherit; white-space: pre-wrap; overflow-wrap: anywhere; }
+.g-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.g-sw { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px; }
+.g-sw > div { display: grid; gap: 4px; font-size: 11px; min-width: 0; }
+.g-sw > div > span:first-child { height: 30px; border-radius: 6px; }
+.g-sw code { font-size: 10.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.g-wf { height: 440px; }
+.g-wf-ctrl { display: grid; gap: 10px; }
+.g-tabpanel { padding: 12px 2px 0; }
+.g-big { font-size: 28px; font-weight: 500; }
+html { scroll-behavior: smooth; scroll-padding-top: 16px; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+<header class="g-head">
+  <div class="brand"><span class="brand-mark" aria-hidden="true"></span>Observatory components</div>
+  <h1 class="emph">Dark data-dashboard design system</h1>
+  <p class="t-meta">Every component below is rendered by <code class="mono">components.js</code> from small fictional data, styled only by <code class="mono">tokens.css</code> and <code class="mono">components.css</code>. Hover anything with a dotted meaning for its tooltip.</p>
+  <nav class="g-toc" id="toc" aria-label="Components"></nav>
+</header>
+<main class="g-main"><div class="grid" id="sections"></div></main>
+
+<script src="components.iife.js"></script>
+<script>
+(() => {
+"use strict";
+const O = window.Observatory;
+const { el } = O;
+O.tooltip();
+
+/* ---------- fictional sample data ---------- */
+const DAYS = ["Mon 6", "Tue 7", "Wed 8", "Thu 9", "Fri 10", "Sat 11", "Sun 12"];
+const PROJECTS = ["atlas-api", "billing-web", "ingest-worker", "docs-site", "search-index", "mobile-shell", "ops-scripts"];
+const TOOLS = { atlas: { label: "Atlas", color: "--tool-claude" }, nimbus: { label: "Nimbus", color: "--tool-codex" } };
+let seed = 11;
+const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+const pick = (a) => a[Math.floor(rnd() * a.length)];
+
+function makeTrace() {
+  const names = { shell: ["npm test", "git status", "make lint", "ls src"], read: ["Read", "Grep", "Glob"], edit: ["Edit", "Write"], web: ["WebFetch"], mcp: ["mcp__tickets"], agent: ["explore schema"] };
+  const kinds = ["shell", "read", "read", "edit", "shell", "web", "mcp", "agent", "read", "shell"];
+  const prompts = [["build", "add pagination to the orders endpoint"], ["debug", "tests fail on the date parser"], ["review", "check the migration before merge"], ["build", "now wire the cursor into the UI"], ["other", "continue"], ["deploy", "ship it to staging"]];
+  const starts = [0, 140, 300, 1500, 1660, 1820], spans = [];
+  starts.forEach((t0, ti) => {
+    const turn = { kind: "turn", name: "turn", start: t0, prompt: { type: prompts[ti][0], text: prompts[ti][1] } };
+    spans.push(turn);
+    let t = t0 + 1, lastBad = null;
+    const pairs = 3 + Math.floor(rnd() * 4);
+    for (let p = 0; p < pairs; p++) {
+      const d0 = 2 + rnd() * 5;
+      spans.push({ kind: "llm", name: pick(["orbit-large", "orbit-mini"]), start: t, end: t + d0, tokens: Math.round(8000 + rnd() * 60000) });
+      t += d0 + 0.3;
+      const k = lastBad ? lastBad.kind : pick(kinds);
+      const d = k === "agent" ? 25 + rnd() * 20 : k === "shell" ? 1 + rnd() * 14 : 0.05 + rnd() * 1.2;
+      const ok = lastBad ? true : rnd() > 0.16;
+      spans.push({ kind: k, name: lastBad ? lastBad.name : pick(names[k]), start: t, end: t + d, ok, retry: !!lastBad, error: ok ? null : pick(["exit_1", "timeout", "not_found"]) });
+      lastBad = ok ? null : spans[spans.length - 1];
+      t += d + rnd() * 3;
+    }
+    turn.end = t;
+  });
+  return spans;
+}
+const TRACE = makeTrace();
+
+const SESSIONS = Array.from({ length: 18 }, (_, i) => {
+  const calls = Math.round(20 + rnd() * 400), errors = Math.round(calls * rnd() * 0.12);
+  return { id: "s-" + (1000 + i * 37).toString(36) + "x" + i, tool: i % 3 ? "atlas" : "nimbus", title: pick(["Add pagination", "Fix flaky date test", "Refactor auth guard", "Write release notes", "Tune search ranking", "Migrate billing table", "Upgrade bundler"]) + " " + (i + 1),
+    project: PROJECTS[i % PROJECTS.length], calls, errors, tokens: Math.round(2e5 + rnd() * 9e6), active: Math.round(300 + rnd() * 9000),
+    health: Math.round(55 + rnd() * 45), model: pick(["orbit-large", "orbit-mini", "lumen-2"]) };
+});
+
+/* ---------- section helper ---------- */
+const toc = document.getElementById("toc"), host = document.getElementById("sections");
+function section(id, title, hint, snippet, build, span = "c-12") {
+  const body = el("div", { class: "card-b" });
+  const card = el("section", { class: "card g-sec " + span, id, "aria-labelledby": id + "-h" },
+    el("div", { class: "card-h" }, el("h2", { id: id + "-h" }, title), hint ? el("span", { class: "hint" }, hint) : null), body);
+  host.append(card);
+  toc.append(el("a", { href: "#" + id }, title));
+  build(body);
+  body.append(el("div", { class: "well" }, el("code", {}, snippet)));
+}
+
+/* ---------- tokens ---------- */
+section("tokens", "Tokens", "semantic roles from tokens.css", "CSS reads roles through var(); components.js takes token names: O.dot('--ok'), { color: '--cat-1' }", (b) => {
+  const groups = [["--surface-chrome", "--surface-canvas", "--surface-card", "--surface-raised", "--surface-overlay", "--edge", "--edge-strong"],
+    ["--fg-emph", "--fg-body", "--fg-meta", "--fg-faint", "--accent", "--accent-fill", "--accent-tint"],
+    ["--ok", "--warn", "--err", "--ok-tint", "--warn-tint", "--err-tint", "--kind-turn"],
+    ["--kind-llm", "--kind-shell", "--kind-read", "--kind-edit", "--kind-agent", "--kind-web", "--kind-mcp", "--kind-other"]];
+  for (const g of groups) b.append(el("div", { class: "g-sw" }, g.map((t) => el("div", {}, el("span", { style: `background:${O.cv(t)};box-shadow:inset 0 0 0 1px ${O.cv("--edge")}` }), el("code", { class: "mono t-meta" }, t)))));
+});
+
+/* ---------- KPI strip ---------- */
+section("kpi", "KPI strip / stat tile", "ticker + sparkline + foot; tone is-warn / is-err", "O.kpiStrip(node, [{ label: 'Tool calls', value: 48213, sub: '312 sessions', spark: [..] }])", (b) => {
+  const box = el("section", { "aria-label": "Summary" }); b.append(box);
+  O.kpiStrip(box, [
+    { label: "Tool calls", value: 48213, sub: "312 sessions · 41 subagent runs" },
+    { label: "User prompts", value: 1964, sub: "per day →", spark: [180, 240, 310, 205, 360, 120, 90] },
+    { label: "Error rate", value: 0.0612, format: (x) => O.fmtPct(x, 2), sub: "2,951 failed calls", tone: "err" },
+    { label: "Tokens", value: 381e6, format: O.fmtK, sub: "input + output + cache →", spark: [42e6, 61e6, 55e6, 70e6, 88e6, 30e6, 35e6] },
+    { label: "p95 latency", value: 38.4, format: O.fmtDur, sub: "includes permission waits", tone: "warn" },
+  ]);
+});
+
+/* ---------- ticker + sparkline ---------- */
+section("ticker", "Number ticker", "digit roll, 45ms stagger; final value under reduced motion", "O.ticker(node, 128450, O.fmtN)", (b) => {
+  const a = el("span", { class: "num g-big emph" }), c = el("span", { class: "num g-big emph" });
+  b.append(el("div", { class: "g-row" }, a, el("span", { class: "t-faint" }, "·"), c));
+  O.ticker(a, 128450, O.fmtN); O.ticker(c, 0.973, (x) => O.fmtPct(x, 1));
+}, "c-6");
+section("spark", "Sparkline", "area + line + end dot; line draws in", "node.append(O.sparkline([3, 5, 4, 8, 6, 9], { width: 160, height: 40 }))", (b) => {
+  b.append(el("div", { class: "g-row" }, O.sparkline([3, 5, 4, 8, 6, 9, 12, 10], { width: 160, height: 40, label: "Prompts per day" }), O.sparkline([9, 7, 8, 4, 5, 3, 2], { width: 160, height: 40, color: "--err" }), O.sparkline([4, 4, 6, 5, 7, 6, 8], { width: 160, height: 40, color: "--cat-3" })));
+}, "c-6");
+
+/* ---------- pills, chips, segmented, legend ---------- */
+section("pills", "Pills", "tone parity: ok, warn, err, and dashed heur for inferred values", "O.pill('heuristic', 'heur')", (b) => {
+  b.append(el("div", { class: "g-row" }, O.pill("neutral"), O.pill("ok", "ok"), O.pill("slow", "warn"), O.pill("3 failed", "err"), O.pill("heuristic", "heur", { "data-tip": "Keyword heuristic, not a logged value" }), O.pill("subagent"), O.pill("a1b2c3d4", null, { class: "mono" })));
+}, "c-6");
+section("chips", "Chips and segmented control", "aria-pressed toggles; one choice in a segmented group", "O.segmented(node, [{ value: 'all', label: 'All' }, ..], { onChange })", (b) => {
+  const seg = el("div"), out = el("span", { class: "results" }, "value: all");
+  O.segmented(seg, [{ value: "all", label: "All" }, { value: "atlas", label: "Atlas", color: "--tool-claude" }, { value: "nimbus", label: "Nimbus", color: "--tool-codex" }], { label: "Agent tool", onChange: (v) => (out.textContent = "value: " + v) });
+  const leg = el("div");
+  O.legend(leg, [{ label: "orbit-large", color: "--cat-1" }, { label: "orbit-mini", color: "--cat-2", pressed: false }, { label: "lumen-2", color: "--cat-3" }], { onToggle: () => {} });
+  const sel = el("select", { class: "chip", "aria-label": "Task type" }, ["All task types", "build", "debug", "deploy"].map((t) => el("option", {}, t)));
+  b.append(el("div", { class: "g-row" }, seg, out), el("div", { class: "g-row" }, O.toggleChip("Has errors"), O.toggleChip("Hide subagent runs", { pressed: true }), sel), leg);
+}, "c-6");
+
+/* ---------- tabs ---------- */
+section("tabs", "Tabs", "counts in mono; ← → Home End move between tabs", "O.tabs(nav, [{ id: 'traces', label: 'Traces', count: 312, panel: 'view-traces' }], { onChange })", (b) => {
+  const nav = el("nav"), panels = ["Overview", "Traces", "Errors"].map((t) => el("div", { id: "g-tab-" + t.toLowerCase(), class: "g-tabpanel t-meta" }, `${t} panel content.`));
+  b.append(el("div", {}, nav, ...panels));
+  O.tabs(nav, [{ id: "overview", label: "Overview", panel: panels[0] }, { id: "traces", label: "Traces", count: 312, panel: panels[1] }, { id: "errors", label: "Errors", count: 2951, panel: panels[2] }], { label: "Views" });
+}, "c-6");
+
+/* ---------- card ---------- */
+section("card", "Card", "solid for logged data, dashed .heuristic for inferred", "<div class=\"card heuristic\"><div class=\"card-h\"><h2>..</h2></div><div class=\"card-b\">..</div></div>", (b) => {
+  b.append(el("div", { class: "grid" },
+    el("div", { class: "card c-6" }, el("div", { class: "card-h" }, el("h2", {}, "Logged"), el("span", { class: "hint" }, "from the source")), el("div", { class: "card-b t-meta" }, "Values read directly from logs.")),
+    el("div", { class: "card heuristic c-6" }, el("div", { class: "card-h" }, el("h2", {}, "Inferred"), O.pill("heuristic", "heur")), el("div", { class: "card-b t-meta" }, "Values computed by a rule; say which."))));
+}, "c-6");
+
+/* ---------- bar list ---------- */
+section("barlist", "Bar list", "ranked rows; fill sized to value / max; tones and pills", "node.append(O.barList([{ label: 'atlas-api', value: 9.1e6, meta: '24 sess' }], { format: O.fmtK }))", (b) => {
+  b.append(O.barList(PROJECTS.map((p, i) => ({ label: p, value: Math.round(9e6 / (i + 1.2)), meta: `${24 - i * 3} sess`, pill: i === 1 ? "+3 subagent" : null, tip: `${p}\n${O.fmtK(Math.round(9e6 / (i + 1.2)))} tokens` })), { format: O.fmtK }),
+    O.barList([{ label: "exit_1", value: 412, tone: "err", mono: true }, { label: "timeout", value: 96, tone: "err", mono: true }, { label: "not_found", value: 31, tone: "err", mono: true }]));
+}, "c-6");
+
+/* ---------- stacked bars ---------- */
+section("stacked", "Stacked bar chart", "per-column tooltip; legend toggles series", "O.stackedBars(svg, [{ name: 'orbit-large', color: '--cat-1', values: [..] }], { labels: DAYS, legend })", (b) => {
+  const leg = el("div"), svg = O.sv("svg", { height: 220 });
+  b.append(leg, svg);
+  O.stackedBars(svg, [
+    { name: "orbit-large", color: "--cat-1", values: [42, 61, 55, 70, 88, 30, 35].map((x) => x * 1e6) },
+    { name: "orbit-mini", color: "--cat-2", values: [12, 9, 15, 22, 18, 6, 4].map((x) => x * 1e6) },
+    { name: "lumen-2", color: "--cat-3", values: [3, 5, 2, 8, 6, 1, 2].map((x) => x * 1e6) }], { labels: DAYS, legend: leg, height: 220, label: "Tokens per day by model" });
+}, "c-6");
+
+/* ---------- composition ---------- */
+section("composition", "Context composition bar", "parts of one whole, with share", "node.append(O.compositionBar([{ label: 'Cache read', value: 3.1e8, color: '--cat-1' }, ..]))", (b) => {
+  b.append(O.compositionBar([{ label: "Cache read", value: 312e6, color: "--cat-1" }, { label: "Cache write", value: 41e6, color: "--cat-3" }, { label: "Fresh input", value: 19e6, color: "--cat-6" }, { label: "Output", value: 9e6, color: "--cat-4" }],
+    { label: "Token composition", kv: [["LLM calls", O.fmtN(8412)], ["Avg context per call", O.fmtK(45200)], ["Cost", el("span", { class: "nl" }, "not logged")]] }));
+}, "c-6");
+
+/* ---------- treemap ---------- */
+section("treemap", "Ordered treemap", "top 10 as tiles, the rest folded into a hatched tile; Enter or click selects", "O.treemap(node, [{ label, value, color: '--tool-claude' }], { max: 14, onSelect })", (b) => {
+  const box = el("div"), out = el("div", { class: "tmap-foot" }, el("span", {}, "Select a tile"));
+  b.append(box, out);
+  O.treemap(box, SESSIONS.map((s) => ({ id: s.id, label: s.title, value: s.tokens, color: TOOLS[s.tool].color })), { max: 10, label: "Sessions sized by tokens", onSelect: (it) => (out.firstChild.textContent = "Selected: " + it.label) });
+});
+
+/* ---------- data table ---------- */
+section("table", "Data table", "sortable headers (click, Enter, Space); split bar; health dot", "O.sortableTable(table, [{ key: 'tokens', label: 'Tokens', align: 'r', render: (r) => O.fmtK(r.tokens) }], rows, { sort: { key: 'tokens', dir: -1 }, onRowClick })", (b) => {
+  const t = el("table"), res = el("span", { class: "results" });
+  b.append(el("div", { class: "tbl-wrap free" }, t), res);
+  const tableApi = O.sortableTable(t, [
+    { key: "tool", label: "Tool", render: (s) => el("span", { class: "tool-badge" }, O.dot(TOOLS[s.tool].color), TOOLS[s.tool].label) },
+    { key: "title", label: "Session", render: (s) => el("span", { class: "trunc emph" }, s.title), value: (s) => s.title.toLowerCase() },
+    { key: "project", label: "Project" },
+    { key: "active", label: "Duration", align: "r", render: (s) => el("span", { class: "num" }, O.fmtDur(s.active)) },
+    { key: "calls", label: "Tool calls", align: "r", render: (s) => O.splitBar(s.calls - s.errors, s.errors, { label: true }) },
+    { key: "errors", label: "Errors", align: "r", render: (s) => (s.errors ? O.pill(O.fmtN(s.errors), "err") : el("span", { class: "num zero" }, "0")) },
+    { key: "tokens", label: "Tokens", align: "r", render: (s) => el("span", { class: "num" }, O.fmtK(s.tokens)) },
+    { key: "health", label: "Health", align: "r", render: (s) => O.healthDot(s.health, { tip: `Heuristic health ${s.health}/100` }) },
+  ], SESSIONS.slice(0, 8), { sort: { key: "tokens", dir: -1 }, label: "Sessions", onRowClick: (s) => tableApi.select(s.id), onRender: (rows) => (res.textContent = `${rows.length} sessions`) });
+});
+
+/* ---------- split bar + health dot ---------- */
+section("split", "Split bar and health dot", "ok vs failed share; health tone 85+ / 70–84 / under 70 / grey", "O.splitBar(ok, failed, { label: true }); O.healthDot(78)", (b) => {
+  b.append(el("div", { class: "g-row" }, O.splitBar(380, 12, { label: true }), O.splitBar(90, 40, { label: true }), O.splitBar(0, 0, { label: true })),
+    el("div", { class: "g-row" }, O.healthDot(92), O.healthDot(78), O.healthDot(54), O.healthDot(null)));
+}, "c-6");
+
+/* ---------- stat strip + kv ---------- */
+section("statstrip", "Stat strip", "six cells; three per row under 700px", "node.append(O.statStrip([{ label: 'Errors', value: '4', tone: 'err' }, ..]))", (b) => {
+  b.append(O.statStrip([{ label: "Active", value: "1h 12m" }, { label: "Tokens", value: "4.2M" }, { label: "LLM calls", value: "212" }, { label: "Tool calls", value: "388" }, { label: "Errors", value: "14", tone: "err" }, { label: "Health", value: "74/100", tone: "warn" }]),
+    O.statLine([["project", "atlas-api"], ["start", "Oct 9 14:02"], ["model", "orbit-large"], ["task", "build (heuristic)"]]));
+}, "c-6");
+section("kv", "Span detail (kv)", "label / mono value pairs, plus a well for snippets", "node.append(O.kvList([['Kind', 'tool call · shell'], ['Duration', '4.20s']]))", (b) => {
+  b.append(el("div", { class: "detail" }, el("h4", {}, O.dot("--kind-shell"), "npm test", O.pill("error", "err")),
+    O.kvList([["Kind", "tool call · shell"], ["Starts at", "+2m 14s"], ["Duration", "4.20s"], ["Error type", "exit_1"]]),
+    el("div", { class: "well" }, O.pill("debug"), " tests fail on the date parser")));
+}, "c-6");
+
+/* ---------- waterfall ---------- */
+section("waterfall", "Waterfall", "idle gaps compressed; ↑↓ move, ←→ fold, E next error, ⌘F search, ⤢ zoom a turn", "O.waterfall(scroller, spans, { controls, detail, keyScope })", (b) => {
+  const ctrl = el("div", { class: "g-wf-ctrl" }), wf = el("div"), detail = el("div");
+  b.append(ctrl, el("div", { class: "dr-body g-wf" }, wf, detail));
+  O.waterfall(wf, TRACE, { controls: ctrl, detail, keyScope: b, summary: () => O.kvList([["Turns", TRACE.filter((s) => s.kind === "turn").length], ["Spans", TRACE.filter((s) => s.kind !== "turn").length]]) });
+});
+
+/* ---------- drawer ---------- */
+section("drawer", "Drawer + scrim", "Escape, Close or scrim click closes; focus returns to the opener", "const d = O.drawer({ onClose }); d.open(button)", (b) => {
+  const d = O.drawer({ title: "Add pagination", initialFocus: () => wfEl });
+  const ctrl = el("div", { class: "g-wf-ctrl" }), wfEl = el("div"), detail = el("div");
+  d.lead.append(el("span", { class: "tool-badge" }, O.dot("--tool-claude"), "Atlas"));
+  d.tag.append(O.pill("s-1a2b3c", null, { class: "mono" }));
+  d.header.append(O.statStrip([{ label: "Active", value: "31m 05s" }, { label: "Tokens", value: "2.4M" }, { label: "LLM calls", value: "24" }, { label: "Tool calls", value: "26" }, { label: "Errors", value: "3", tone: "err" }, { label: "Health", value: "81/100", tone: "warn" }]), ctrl);
+  d.body.append(wfEl, detail);
+  const wf = O.waterfall(wfEl, TRACE, { controls: ctrl, detail, keyScope: d.el });
+  const btn = el("button", { type: "button", class: "chip", id: "g-open-drawer", onclick: (e) => { wf.setSpans(TRACE); d.open(e.currentTarget); } }, "Open trace drawer");
+  b.append(el("div", { class: "g-row" }, btn, el("span", { class: "t-faint" }, "The drawer holds a stat strip, the waterfall and a detail panel.")));
+}, "c-6");
+
+/* ---------- empty + tooltip ---------- */
+section("empty", "Empty state", "say what to change, not just that nothing is here", "node.append(O.emptyState('No sessions match. Clear the search or turn off a filter.'))", (b) => {
+  b.append(O.emptyState("No sessions match. Clear the search or turn off a filter."));
+}, "c-6");
+
+/* ---------- latency ---------- */
+section("latency", "Latency range bar", "solid to p50, lighter to p95, tick at p95; log scale", "O.latencyRows(node, [{ label: 'npm test', p50: 3.2, p95: 41, n: 220, color: '--kind-shell' }])", (b) => {
+  const box = el("div"); b.append(box);
+  O.latencyRows(box, [
+    { label: "explore schema", p50: 31, p95: 92, n: 18, color: "--kind-agent" }, { label: "npm test", p50: 3.2, p95: 41, n: 220, color: "--kind-shell" },
+    { label: "WebFetch", p50: 1.4, p95: 6.8, n: 64, color: "--kind-web" }, { label: "mcp__tickets", p50: 0.62, p95: 2.9, n: 41, color: "--kind-mcp" },
+    { label: "Edit", p50: 0.04, p95: 0.31, n: 902, color: "--kind-edit" }, { label: "Read", p50: 0.012, p95: 0.09, n: 2410, color: "--kind-read" }]);
+}, "c-6");
+
+/* ---------- heat strip ---------- */
+section("heat", "Heat strip", "one cell per item, toned by score; grey when unscored", "O.heatStrip(node, [{ label: 'Session 4', score: 78 }], { onSelect }); node.after(O.heatLegend())", (b) => {
+  const box = el("div"); b.append(box, O.heatLegend([85, 70], "no tool calls"));
+  const cells = Array.from({ length: 64 }, (_, i) => ({ id: "c" + i, label: "Session " + (i + 1), score: i % 13 === 5 ? null : Math.round(52 + rnd() * 48) }));
+  O.heatStrip(box, cells, { onSelect: () => {} });
+}, "c-6");
+
+/* ---------- error groups ---------- */
+section("errors", "Error group accordion", "grouped by tool, then error type; per-day spark; session chips", "O.errorGroups(node, [{ id, label, count, rate, items: [{ type, count, perDay, sessions }] }], { onSession })", (b) => {
+  const box = el("div"); b.append(el("div", { class: "card" }, box));
+  const ids = SESSIONS.map((s) => ({ id: s.id, label: s.id.slice(0, 8), tip: s.title }));
+  O.errorGroups(box, [
+    { id: "shell", label: "Shell", color: "--tool-claude", count: 512, rate: "6.1% of 8.4k", items: [
+      { type: "exit_1", count: 412, heads: "npm ×210  make ×96  git ×40", perDay: [40, 81, 52, 90, 77, 30, 42], sessions: ids.slice(0, 11) },
+      { type: "timeout", count: 100, heads: "npm ×64  curl ×36", perDay: [5, 22, 0, 31, 18, 12, 12], sessions: ids.slice(3, 6) }] },
+    { id: "web", label: "WebFetch", color: "--tool-codex", count: 37, rate: "4.0% of 920", items: [{ type: "not_found", count: 37, perDay: [2, 0, 9, 11, 5, 6, 4], sessions: ids.slice(8, 10) }] },
+  ], { dayLabels: DAYS, onSession: (id) => (b.querySelector(".results") || b.appendChild(el("span", { class: "results" }))).textContent = "Session " + id });
+}, "c-12");
+
+/* ---------- scores ---------- */
+section("scores", "Score card + ring", "dashed border and heur pill mark inferred values; ring tone .9 / .75", "node.append(O.scoreCard({ label: 'Tool success', value: 0.94, format: (x) => O.fmtPct(x), ring: 0.94 }))", (b) => {
+  b.append(el("div", { class: "score-cards" },
+    O.scoreCard({ label: "Tool success rate", value: 0.941, format: (x) => O.fmtPct(x, 1), ring: 0.941, foot: "45,370 of 48,213 calls" }),
+    O.scoreCard({ label: "Retries", value: 812, ring: 0.71, ringTip: "recovered 71%", foot: "302 exact repeats · 577 recovered" }),
+    O.scoreCard({ label: "Avg session health", value: 79, format: (x) => x.toFixed(0) + "/100", ring: 0.79, foot: "212 main sessions" }),
+    O.scoreCard({ label: "Interrupts", value: 64, foot: "19 context compactions" })));
+});
+
+/* ---------- histogram ---------- */
+section("histogram", "Histogram", "binned over 0–100, toned by bin", "O.histogram(svg, scores, { bins: 10, domain: [0, 100], height: 220 })", (b) => {
+  const svg = O.sv("svg"); b.append(svg);
+  O.histogram(svg, Array.from({ length: 160 }, () => Math.min(100, Math.max(0, 85 + (rnd() + rnd() + rnd() - 1.5) * 34))), { height: 220, label: "Session health distribution", unit: "sessions" });
+}, "c-6");
+
+/* ---------- tooltip ---------- */
+section("tooltip", "Tooltip", "any [data-tip] element; follows the pointer, shows on keyboard focus", "O.tooltip(); el.setAttribute('data-tip', 'line one\\nline two')", (b) => {
+  b.append(el("div", { class: "g-row" }, el("button", { type: "button", class: "chip", "data-tip": "Tokens per day\nrange 30M – 88M" }, "Hover or focus me"), O.pill("heuristic", "heur", { "data-tip": "Inferred by a keyword rule" })));
+}, "c-6");
+
+/* ---------- animations ---------- */
+section("motion", "Fade and grow", "grow-x / grow-y / fade-in with --dur-draw / --dur-enter; static under reduced motion", "el.classList.add('grow-x'); el.style.animationDelay = '40ms' /* or O.stagger(i) */", (b) => {
+  const box = el("div");
+  const draw = () => box.replaceChildren(O.barList([{ label: "draw", value: 9 }, { label: "enter", value: 6 }, { label: "collapse", value: 4 }, { label: "micro", value: 2 }]));
+  draw();
+  b.append(el("div", { class: "g-row" }, el("button", { type: "button", class: "chip", onclick: draw }, "Replay"), el("span", { class: "t-faint" }, O.reduced() ? "Reduced motion is on: everything renders in its final state." : "Durations come from the motion tokens.")), box);
+});
+})();
+</script>
+</body>
+</html>

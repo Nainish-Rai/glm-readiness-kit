@@ -1,0 +1,13 @@
+Vendored from https://github.com/Nainish-Rai/observatory-ui
+Commit: 7c67679639f526e50b5ec486901d9e91178b292f (2026-10-26)
+License: MIT (see LICENSE in this folder; copyright (c) 2026 Nainish Rai)
+
+Files copied unchanged:
+  design-system/{tokens.css, components.css, components.js, components.iife.js,
+                 check_tokens.py, build.py, layout.html, gallery.html, README.md}
+  skills/observatory-ui/SKILL.md            -> skill/SKILL.md
+  skills/observatory-ui/references/*.md     -> skill/references/
+
+Do not edit these files in place. To pick up an upstream change, copy the new files over and record the
+new commit above. layout.html is the template source for src/glmkit/report/shell/index.html.tmpl.
+README.md has every component signature; skill/references/ has the style and component rules.

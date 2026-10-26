@@ -1,0 +1,553 @@
+{
+  "$defs": {
+    "Part": {
+      "additionalProperties": true,
+      "description": "text | tool_call | tool_result | reasoning. Extra keys allowed for forward compatibility.",
+      "properties": {
+        "arguments": {
+          "default": null,
+          "title": "Arguments"
+        },
+        "content": {
+          "default": null,
+          "title": "Content"
+        },
+        "id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Id"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Text"
+        },
+        "type": {
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "Part",
+      "type": "object"
+    },
+    "TraceLabels": {
+      "additionalProperties": false,
+      "properties": {
+        "checks": {
+          "items": {},
+          "title": "Checks",
+          "type": "array"
+        },
+        "expected": {
+          "default": null,
+          "title": "Expected"
+        },
+        "human_score": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Human Score"
+        },
+        "user_feedback": {
+          "default": null,
+          "title": "User Feedback"
+        }
+      },
+      "title": "TraceLabels",
+      "type": "object"
+    },
+    "TraceLatency": {
+      "additionalProperties": false,
+      "properties": {
+        "total_ms": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Total Ms"
+        },
+        "ttft_ms": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ttft Ms"
+        }
+      },
+      "title": "TraceLatency",
+      "type": "object"
+    },
+    "TraceMessage": {
+      "additionalProperties": false,
+      "properties": {
+        "parts": {
+          "items": {
+            "$ref": "#/$defs/Part"
+          },
+          "title": "Parts",
+          "type": "array"
+        },
+        "role": {
+          "title": "Role",
+          "type": "string"
+        }
+      },
+      "required": [
+        "role"
+      ],
+      "title": "TraceMessage",
+      "type": "object"
+    },
+    "TraceParams": {
+      "additionalProperties": false,
+      "properties": {
+        "max_tokens": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Tokens"
+        },
+        "reasoning_effort": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reasoning Effort"
+        },
+        "response_format": {
+          "default": null,
+          "title": "Response Format"
+        },
+        "stream": {
+          "default": false,
+          "title": "Stream",
+          "type": "boolean"
+        },
+        "temperature": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Temperature"
+        },
+        "top_p": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Top P"
+        }
+      },
+      "title": "TraceParams",
+      "type": "object"
+    },
+    "TracePrivacy": {
+      "additionalProperties": false,
+      "properties": {
+        "content_present": {
+          "default": true,
+          "title": "Content Present",
+          "type": "boolean"
+        },
+        "redacted": {
+          "default": false,
+          "title": "Redacted",
+          "type": "boolean"
+        }
+      },
+      "title": "TracePrivacy",
+      "type": "object"
+    },
+    "TraceRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "messages": {
+          "items": {
+            "$ref": "#/$defs/TraceMessage"
+          },
+          "title": "Messages",
+          "type": "array"
+        },
+        "model": {
+          "title": "Model",
+          "type": "string"
+        },
+        "params": {
+          "$ref": "#/$defs/TraceParams"
+        },
+        "provider": {
+          "title": "Provider",
+          "type": "string"
+        },
+        "system": {
+          "items": {
+            "$ref": "#/$defs/Part"
+          },
+          "title": "System",
+          "type": "array"
+        },
+        "tools": {
+          "items": {
+            "$ref": "#/$defs/TraceTool"
+          },
+          "title": "Tools",
+          "type": "array"
+        }
+      },
+      "required": [
+        "provider",
+        "model"
+      ],
+      "title": "TraceRequest",
+      "type": "object"
+    },
+    "TraceResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Error"
+        },
+        "finish_reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Finish Reason"
+        },
+        "messages": {
+          "items": {
+            "$ref": "#/$defs/TraceMessage"
+          },
+          "title": "Messages",
+          "type": "array"
+        }
+      },
+      "title": "TraceResponse",
+      "type": "object"
+    },
+    "TraceSource": {
+      "additionalProperties": false,
+      "properties": {
+        "adapter_version": {
+          "title": "Adapter Version",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "otel",
+            "langfuse",
+            "openai",
+            "anthropic",
+            "litellm",
+            "claude_code",
+            "golden",
+            "glmkit"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "ref": {
+          "description": "file#row/id or run_id/item/exchange",
+          "title": "Ref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "ref",
+        "adapter_version"
+      ],
+      "title": "TraceSource",
+      "type": "object"
+    },
+    "TraceTool": {
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "parameters": {
+          "additionalProperties": true,
+          "title": "Parameters",
+          "type": "object"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "TraceTool",
+      "type": "object"
+    },
+    "TraceUsage": {
+      "additionalProperties": false,
+      "properties": {
+        "cache_read_tokens": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cache Read Tokens"
+        },
+        "cache_write_tokens": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cache Write Tokens"
+        },
+        "input_tokens_total": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Input Tokens Total"
+        },
+        "output_tokens_total": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Output Tokens Total"
+        },
+        "reasoning_tokens": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reasoning Tokens"
+        },
+        "source_convention": {
+          "anyOf": [
+            {
+              "enum": [
+                "openai",
+                "anthropic"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Convention"
+        }
+      },
+      "title": "TraceUsage",
+      "type": "object"
+    }
+  },
+  "$id": "https://github.com/glm-readiness-kit/glmkit/schemas/switch-trace-v0.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "call_id": {
+      "title": "Call Id",
+      "type": "string"
+    },
+    "cost_usd_reported": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Cost Usd Reported"
+    },
+    "labels": {
+      "$ref": "#/$defs/TraceLabels"
+    },
+    "latency": {
+      "$ref": "#/$defs/TraceLatency"
+    },
+    "parent_call_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Parent Call Id"
+    },
+    "privacy": {
+      "$ref": "#/$defs/TracePrivacy"
+    },
+    "request": {
+      "$ref": "#/$defs/TraceRequest"
+    },
+    "response": {
+      "$ref": "#/$defs/TraceResponse"
+    },
+    "schema": {
+      "const": "switch-eval.call/0",
+      "default": "switch-eval.call/0",
+      "title": "Schema",
+      "type": "string"
+    },
+    "seq": {
+      "default": 0,
+      "title": "Seq",
+      "type": "integer"
+    },
+    "source": {
+      "$ref": "#/$defs/TraceSource"
+    },
+    "task_type": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Task Type"
+    },
+    "trace_id": {
+      "title": "Trace Id",
+      "type": "string"
+    },
+    "ts_start": {
+      "format": "date-time",
+      "title": "Ts Start",
+      "type": "string"
+    },
+    "usage": {
+      "$ref": "#/$defs/TraceUsage"
+    }
+  },
+  "required": [
+    "call_id",
+    "trace_id",
+    "ts_start",
+    "source",
+    "request"
+  ],
+  "title": "SwitchTrace",
+  "type": "object"
+}

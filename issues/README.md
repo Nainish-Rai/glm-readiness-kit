@@ -5,7 +5,7 @@ Statuses: `ready` → `in-progress` → `review` → `done` (or `blocked`). Labe
 
 | # | Issue | Type | Blocked by | Status |
 |---|---|---|---|---|
-| 01 | [Foundation tracer bullet](01-foundation.md) | AFK | none | ready |
+| 01 | [Foundation tracer bullet](01-foundation.md) | AFK | none | review |
 | 02 | [Conformance: tool-call cases + scorecard](02-conform-tools.md) | AFK | 01 | blocked |
 | 03 | [Conformance: wire, errors, Anthropic endpoint](03-conform-wire-anthropic.md) | AFK | 01 | blocked |
 | 04 | [Conformance: thinking, streaming, cache, language](04-conform-thinking-stream.md) | AFK | 01 | blocked |

@@ -1,0 +1,10 @@
+name: zai-api-anthropic
+title: Z.ai API (pay-as-you-go), Anthropic-compatible
+provider: zai
+base_url: https://api.z.ai/api/anthropic
+protocol: anthropic_messages
+endpoint_class: api
+model: glm-5.3
+api_key_env: ZAI_API_KEY
+notes: Same base URL as the Coding Plan Anthropic path; billing is decided by the key type, not the URL.
+sources: ["research/01-conformance.md §2.2", "https://docs.z.ai/devpack/tool/claude"]

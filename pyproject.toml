@@ -1,0 +1,54 @@
+[project]
+name = "glmkit"
+version = "0.1.0"
+description = "GLM Production Readiness Kit: conformance, bridge, eval, guard, deploy and evidence for GLM deployments"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.12"
+authors = [{ name = "GLM Readiness Kit contributors" }]
+dependencies = [
+    "httpx>=0.27",
+    "jsonschema>=4.21",
+    "pydantic>=2.7",
+    "pyyaml>=6.0",
+    "starlette>=0.37",
+    "typer>=0.12",
+    "uvicorn>=0.30",
+]
+
+[project.scripts]
+glmkit = "glmkit.cli:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.5",
+]
+
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/glmkit"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"cases" = "glmkit/_bundled/cases"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+addopts = "-q"
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+src = ["src", "tests"]
+extend-exclude = ["src/glmkit/report/vendor"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF"]
+ignore = ["RUF001", "RUF002", "RUF003", "B008"]

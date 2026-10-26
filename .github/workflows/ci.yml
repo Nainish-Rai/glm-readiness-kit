@@ -1,0 +1,41 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - run: uv sync --locked
+      - run: uv run ruff check
+      - run: uv run ruff format --check src tests
+      - run: uv run pytest
+
+  dashboard-smoke:
+    # Builds the dashboard from mock runs and checks it in headless Chrome at 1440 and 390 px.
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: uv sync --locked
+      - run: uv run glmkit conform run --target mock --cases 'WIRE-00*'
+      - run: uv run glmkit conform run --target mock --cases 'WIRE-00*' --mock-defect forced-thinking-500 || true
+      - run: uv run glmkit report build results/ -o site/
+      - run: npm install --prefix tools/site-smoke --no-audit --no-fund
+      - run: CHROME_PATH="$(command -v google-chrome)" node tools/site-smoke/smoke.mjs site/index.html

@@ -1,0 +1,10 @@
+name: mock-anthropic
+title: Mock GLM (in-process, Anthropic-compatible, API class)
+provider: mock
+base_url: "{mock}/api/anthropic"
+protocol: anthropic_messages
+endpoint_class: api
+model: glm-5.3
+api_key_env: GLMKIT_MOCK_API_KEY
+api_key_required: false
+spawn_mock: true

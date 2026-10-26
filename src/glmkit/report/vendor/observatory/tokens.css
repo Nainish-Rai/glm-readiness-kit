@@ -1,0 +1,54 @@
+/* Observatory design tokens: dark-only, Geist + Geist Mono.
+ *
+ * Three layers, read top to bottom:
+ *   1. primitives: raw palette, spacing and radius values. Only the semantic layer reads these.
+ *      They are the only place a literal colour may appear (check_tokens.py enforces this).
+ *   2. semantic roles: what components read. Surfaces, edges, text, accent, status tones and
+ *      their tints, span-kind colours, tool colours, type scale.
+ *      Exception: --cat-1..8 double as the categorical series palette for charts.
+ *   3. motion presets: easing and duration by job (hover, collapse, exit, enter, draw, count).
+ *      The reduced-motion block below zeroes every duration.
+ *
+ * To re-theme, change primitives. To re-map meaning, change the semantic layer.
+ * Components never introduce new colours; add a semantic role here first.
+ */
+:root {
+  color-scheme: dark;
+  /* ---- primitives (palette names; read only by the semantic layer) ---- */
+  --gray-0: #08090b; --gray-1: #0e0f12; --gray-2: #131417; --gray-3: #1a1b1f; --gray-4: #212327;
+  --gray-5: #2a2c31; --gray-6: #3a3d43; --gray-7: #616368; --gray-8: #87898e; --gray-9: #b5b7bd; --gray-10: #e5e8ed;
+  --black: #000000;
+  --indigo-4: #5658ab; --indigo-6: #8e93f3;
+  --green-6: #52cd86; --amber-6: #f2b036; --red-6: #f75d59;
+  --cat-1: #7aabfc; --cat-2: #b897f0; --cat-3: #1dc5ae; --cat-4: #e189c5; --cat-5: #2ebbe8; --cat-6: #da9e3f; --cat-7: #ee8f63; --cat-8: #73c076;
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 20px; --space-6: 24px; --space-8: 32px;
+  --radius-1: 4px; --radius-2: 6px; --radius-3: 10px;
+
+  /* ---- semantic roles ---- */
+  --surface-chrome: var(--gray-0); --surface-canvas: var(--gray-1); --surface-card: var(--gray-2);
+  --surface-raised: var(--gray-3); --surface-overlay: var(--gray-4); --surface-well: var(--gray-0);
+  --scrim: color-mix(in oklab, var(--black) 45%, transparent); --shadow-pop: 0 8px 24px color-mix(in oklab, var(--black) 45%, transparent); --mask-ink: var(--black);
+  --edge: var(--gray-5); --edge-strong: var(--gray-6);
+  --fg-emph: var(--gray-10); --fg-body: var(--gray-9); --fg-meta: var(--gray-8); --fg-faint: var(--gray-7);
+  --accent: var(--indigo-6); --accent-fill: var(--indigo-4);
+  --accent-tint: color-mix(in oklab, var(--indigo-6) 16%, transparent);
+  --ok: var(--green-6); --warn: var(--amber-6); --err: var(--red-6);
+  --ok-tint: color-mix(in oklab, var(--green-6) 14%, transparent);
+  --warn-tint: color-mix(in oklab, var(--amber-6) 14%, transparent);
+  --err-tint: color-mix(in oklab, var(--red-6) 14%, transparent);
+  --kind-turn: color-mix(in oklab, var(--indigo-6) 38%, transparent);
+  --kind-llm: var(--cat-2); --kind-shell: var(--cat-1); --kind-read: var(--cat-3); --kind-edit: var(--cat-4);
+  --kind-agent: var(--cat-5); --kind-web: var(--cat-6); --kind-mcp: var(--cat-7); --kind-other: var(--gray-7);
+  --tool-claude: var(--cat-7); --tool-codex: var(--cat-1);
+
+  --font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --text-meta: 11px; --text-num: 12px; --text-body: 13px; --text-panel: 14px; --text-title: 16px; --text-kpi: 28px;
+
+  /* ---- motion presets (by job) ---- */
+  --ease-out: cubic-bezier(.16, 1, .3, 1); --ease-draw: cubic-bezier(.22, 1, .36, 1); --ease-sheet: cubic-bezier(.32, .72, 0, 1);
+  --dur-micro: 100ms; --dur-collapse: 150ms; --dur-exit: 160ms; --dur-enter: 220ms; --dur-draw: 550ms; --dur-count: 800ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur-micro: 0ms; --dur-collapse: 0ms; --dur-exit: 0ms; --dur-enter: 0ms; --dur-draw: 0ms; --dur-count: 0ms; }
+}

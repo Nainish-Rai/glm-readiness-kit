@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Observatory Layout</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="components.css">
+<!--
+  Reusable dashboard shell. Built only from tokens.css, components.css and components.iife.js.
+  Each region is marked `region: <name>` ... `/region: <name>`. To reuse: keep the markup, replace the
+  sample data in `region: data`, and adjust the render functions in `region: wiring`.
+  All data on this page is fictional.
+-->
+</head>
+<body>
+
+<!-- region: header -->
+<header class="top">
+  <div class="top-in">
+    <div class="brand"><span class="brand-mark" aria-hidden="true"></span>Acme Observatory</div>
+    <span class="window" id="window">Oct 6 00:00 to Oct 12 23:59 · 7 days · UTC</span>
+    <span class="spacer"></span>
+    <div id="toolSeg"></div>
+  </div>
+  <!-- region: tabs -->
+  <nav id="tabs"></nav>
+  <!-- /region: tabs -->
+</header>
+<!-- /region: header -->
+
+<main class="main">
+  <!-- region: kpis -->
+  <section id="kpis" aria-label="Summary"></section>
+  <!-- /region: kpis -->
+
+  <!-- region: view-overview -->
+  <section class="view" id="view-overview">
+    <div class="grid">
+      <!-- region: overview-main -->
+      <div class="c-8 stack">
+        <div class="card">
+          <div class="card-h"><h2>Tokens over time by model</h2><span class="hint">stacked per day</span><span class="spacer"></span><div id="modelLegend"></div></div>
+          <div class="card-b"><svg id="tokChart"></svg></div>
+        </div>
+        <div class="card">
+          <div class="card-h"><h2>Token sinks</h2><span class="hint">sessions sized by tokens · click a tile for its trace</span></div>
+          <div class="card-b"><div id="tmap"></div><div class="tmap-foot" id="tmapFoot"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-h"><h2>Models</h2><span class="hint">tokens and tool-call error rate</span></div>
+          <div class="tbl-wrap free"><table id="modelTable"></table></div>
+        </div>
+      </div>
+      <!-- /region: overview-main -->
+      <!-- region: overview-aside -->
+      <aside class="c-4 stack" aria-label="Breakdowns">
+        <div class="card">
+          <div class="card-h"><h2>Context composition</h2><span class="hint">where the tokens went</span></div>
+          <div class="card-b" id="ctxMap"></div>
+        </div>
+        <div class="card">
+          <div class="card-h"><h2>Sessions by project</h2></div>
+          <div class="card-b" id="projects"></div>
+        </div>
+        <div class="card heuristic">
+          <div class="card-h"><h2>Task types</h2><span class="pill heur" data-tip="Keyword rule per prompt">heuristic</span><span class="hint">sessions per type</span></div>
+          <div class="card-b" id="tasks"></div>
+        </div>
+      </aside>
+      <!-- /region: overview-aside -->
+    </div>
+  </section>
+  <!-- /region: view-overview -->
+
+  <!-- region: view-sessions -->
+  <section class="view" id="view-sessions" hidden>
+    <div class="card">
+      <div class="toolbar" id="sessToolbar"></div>
+      <div class="tbl-wrap"><table id="sessTable"></table></div>
+    </div>
+  </section>
+  <!-- /region: view-sessions -->
+
+  <!-- region: view-scores -->
+  <section class="view" id="view-scores" hidden>
+    <div class="stack">
+      <div class="score-cards" id="scoreCards"></div>
+      <div class="grid">
+        <div class="card heuristic c-12">
+          <div class="card-h"><h2>Every session</h2><span class="pill heur">heuristic</span><span class="hint">one cell per session, oldest first · click to open</span></div>
+          <div class="card-b"><div id="heat"></div><div id="heatLegend"></div></div>
+        </div>
+        <div class="card heuristic c-6">
+          <div class="card-h"><h2>Session health</h2><span class="pill heur">heuristic</span><span class="hint">score out of 100</span></div>
+          <div class="card-b"><svg id="healthChart"></svg></div>
+        </div>
+        <div class="card heuristic c-6">
+          <div class="card-h"><h2>Tool success rate</h2><span class="pill heur">heuristic</span><span class="hint">lowest first</span></div>
+          <div class="card-b" id="toolSuccess"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- /region: view-scores -->
+
+  <!-- region: footer -->
+  <footer class="foot">Fictional sample data. Read-only. Values a source does not record show as "not logged".</footer>
+  <!-- /region: footer -->
+</main>
+
+<!-- region: drawer -->
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drTitle" aria-hidden="true">
+  <div class="dr-h">
+    <div class="dr-title"><span class="dr-lead"></span><h3 id="drTitle"></h3><span class="dr-tag"></span>
+      <button type="button" class="chip dr-close" aria-label="Close trace">Close <span class="mono t-faint" aria-hidden="true">Esc</span></button></div>
+    <div id="drStrip"></div>
+    <div id="drStats"></div>
+    <div class="wf-root" id="drControls"></div>
+  </div>
+  <div class="dr-body">
+    <div id="wf"></div>
+    <div id="detail"></div>
+  </div>
+</aside>
+<!-- /region: drawer -->
+
+<script src="components.iife.js"></script>
+<script>
+(() => {
+"use strict";
+const O = window.Observatory;
+const { el } = O;
+O.tooltip();
+
+/* region: data (fictional; replace with your own) ------------------------------------------- */
+const DAYS = ["Mon 6", "Tue 7", "Wed 8", "Thu 9", "Fri 10", "Sat 11", "Sun 12"];
+const TOOLS = { atlas: { label: "Atlas", color: "--tool-claude" }, nimbus: { label: "Nimbus", color: "--tool-codex" } };
+const MODELS = { "orbit-large": "--cat-1", "orbit-mini": "--cat-2", "lumen-2": "--cat-3" };
+const PROJECTS = ["atlas-api", "billing-web", "ingest-worker", "docs-site", "search-index", "mobile-shell", "ops-scripts"];
+const TASKS = ["build", "debug", "review", "deploy", "research", "other"];
+let seed = 42;
+const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+const pick = (a) => a[Math.floor(rnd() * a.length)];
+const TITLES = ["Add pagination", "Fix flaky date test", "Refactor auth guard", "Write release notes", "Tune search ranking", "Migrate billing table", "Upgrade bundler", "Trace slow checkout", "Split worker queue"];
+
+function makeTrace(n) {
+  const names = { shell: ["npm test", "git status", "make lint", "ls src"], read: ["Read", "Grep", "Glob"], edit: ["Edit", "Write"], web: ["WebFetch"], mcp: ["mcp__tickets"], agent: ["explore schema"] };
+  const kinds = ["shell", "read", "read", "edit", "shell", "web", "mcp", "agent", "read", "shell"], spans = [];
+  let t0 = 0;
+  for (let ti = 0; ti < n; ti++) {
+    const turn = { kind: "turn", name: "turn", start: t0, prompt: { type: pick(TASKS), text: pick(["add the cursor param", "why does this test fail", "check the diff", "continue", "ship it to staging", "look at the logs"]) } };
+    spans.push(turn);
+    let t = t0 + 1, lastBad = null;
+    const pairs = 2 + Math.floor(rnd() * 5);
+    for (let p = 0; p < pairs; p++) {
+      const d0 = 2 + rnd() * 5;
+      spans.push({ kind: "llm", name: pick(Object.keys(MODELS)), start: t, end: t + d0, tokens: Math.round(8000 + rnd() * 60000) });
+      t += d0 + 0.3;
+      const k = lastBad ? lastBad.kind : pick(kinds);
+      const d = k === "agent" ? 25 + rnd() * 20 : k === "shell" ? 1 + rnd() * 14 : 0.05 + rnd() * 1.2;
+      const ok = lastBad ? true : rnd() > 0.15;
+      spans.push({ kind: k, name: lastBad ? lastBad.name : pick(names[k]), start: t, end: t + d, ok, retry: !!lastBad, error: ok ? null : pick(["exit_1", "timeout", "not_found"]) });
+      lastBad = ok ? null : spans[spans.length - 1];
+      t += d + rnd() * 3;
+    }
+    turn.end = t;
+    t0 = t + (rnd() < 0.25 ? 600 + rnd() * 1800 : 10 + rnd() * 60); // sometimes an idle gap
+  }
+  return spans;
+}
+
+const SESSIONS = Array.from({ length: 36 }, (_, i) => {
+  const trace = makeTrace(2 + Math.floor(rnd() * 7));
+  const tools = trace.filter((s) => s.kind !== "turn" && s.kind !== "llm");
+  const errors = tools.filter((s) => !s.ok).length;
+  const day = i % 7;
+  return {
+    id: "s" + (4096 + i * 977).toString(16) + i, tool: i % 3 ? "atlas" : "nimbus", title: pick(TITLES), project: pick(PROJECTS), task: pick(TASKS), day,
+    start: `Oct ${6 + day} ${String(8 + Math.floor(rnd() * 12)).padStart(2, "0")}:${String(Math.floor(rnd() * 60)).padStart(2, "0")}`,
+    model: pick(Object.keys(MODELS)), calls: tools.length, errors, llm: trace.filter((s) => s.kind === "llm").length,
+    prompts: trace.filter((s) => s.kind === "turn").length, tokens: trace.reduce((a, s) => a + (s.tokens || 0), 0) * (1 + Math.floor(rnd() * 6)),
+    active: trace.filter((s) => s.kind === "turn").reduce((a, s) => a + s.end - s.start, 0),
+    health: Math.max(40, Math.min(100, Math.round(100 - (errors / Math.max(tools.length, 1)) * 160 - rnd() * 12))),
+    trace,
+  };
+});
+/* /region: data */
+
+/* region: wiring ------------------------------------------------------------------------------ */
+const $ = (id) => document.getElementById(id);
+const state = { tool: "all", q: "", errOnly: false, lowOnly: false, task: "all" };
+const scoped = () => SESSIONS.filter((s) => state.tool === "all" || s.tool === state.tool);
+const sum = (rows, f) => rows.reduce((a, r) => a + f(r), 0);
+const perDay = (rows, f) => DAYS.map((_, d) => sum(rows.filter((s) => s.day === d), f));
+const toolBadge = (t) => el("span", { class: "tool-badge" }, O.dot(TOOLS[t].color), TOOLS[t].label);
+
+/* header: segmented filter + tabs */
+const seg = O.segmented($("toolSeg"), [{ value: "all", label: "All" }, { value: "atlas", label: "Atlas", color: TOOLS.atlas.color }, { value: "nimbus", label: "Nimbus", color: TOOLS.nimbus.color }],
+  { label: "Agent tool", onChange: (v) => { state.tool = v; renderAll(); } });
+const tabBar = O.tabs($("tabs"), [{ id: "overview", label: "Overview", panel: "view-overview" }, { id: "sessions", label: "Sessions", panel: "view-sessions" }, { id: "scores", label: "Scores", panel: "view-scores" }],
+  { label: "Views", onChange: (id) => { try { history.replaceState(null, "", "#" + id); } catch (e) {} } });
+
+/* KPI strip */
+function renderKpis(rows) {
+  const calls = sum(rows, (s) => s.calls), fails = sum(rows, (s) => s.errors), rate = calls ? fails / calls : null;
+  const durs = rows.flatMap((s) => s.trace.filter((x) => x.kind !== "turn" && x.kind !== "llm").map((x) => x.end - x.start)).sort((a, b) => a - b);
+  const p95 = durs.length ? durs[Math.floor(durs.length * 0.95)] : null;
+  O.kpiStrip($("kpis"), [
+    { label: "Tool calls", value: calls, sub: `${rows.length} sessions`, spark: perDay(rows, (s) => s.calls) },
+    { label: "Prompts", value: sum(rows, (s) => s.prompts), sub: "per day →", spark: perDay(rows, (s) => s.prompts) },
+    { label: "Error rate", value: rate, format: (x) => O.fmtPct(x, 2), sub: `${O.fmtN(fails)} failed tool calls`, tone: rate > 0.05 ? "err" : rate > 0.03 ? "warn" : null, spark: perDay(rows, (s) => s.errors), sparkColor: "--err" },
+    { label: "Tokens", value: sum(rows, (s) => s.tokens), format: O.fmtK, sub: "all kinds, per day →", spark: perDay(rows, (s) => s.tokens) },
+    { label: "p95 tool latency", value: p95, format: O.fmtDur, sub: "per tool call", tone: p95 > 30 ? "warn" : null, spark: perDay(rows, (s) => s.active) },
+  ]);
+}
+
+/* overview */
+let tokChart, tmap;
+function renderOverview(rows) {
+  const series = Object.entries(MODELS).map(([m, c]) => ({ name: m, color: c, values: perDay(rows.filter((s) => s.model === m), (s) => s.tokens) }));
+  if (tokChart) tokChart.update(series, DAYS);
+  else tokChart = O.stackedBars($("tokChart"), series, { labels: DAYS, legend: $("modelLegend"), height: 240, label: "Tokens per day stacked by model" });
+
+  const items = rows.map((s) => ({ id: s.id, label: s.title, value: s.tokens, color: TOOLS[s.tool].color, tip: `${s.title}\n${TOOLS[s.tool].label} · ${s.project}\n${O.fmtK(s.tokens)} tokens` }));
+  if (tmap) tmap.update(items);
+  else tmap = O.treemap($("tmap"), items, { max: 14, label: "Sessions sized by tokens", restLabel: (n) => `${n} more sessions`, onSelect: (it, tile) => openSession(it.id, tile) });
+  const total = sum(rows, (s) => s.tokens) || 1, top5 = rows.map((s) => s.tokens).sort((a, b) => b - a).slice(0, 5).reduce((a, b) => a + b, 0);
+  $("tmapFoot").replaceChildren(el("span", {}, el("b", { class: "num emph" }, Math.round((top5 / total) * 100) + "%"), " of tokens sit in the top 5 sessions"),
+    el("span", {}, O.dot(TOOLS.atlas.color), "Atlas"), el("span", {}, O.dot(TOOLS.nimbus.color), "Nimbus"));
+
+  const mrows = Object.keys(MODELS).map((m) => { const r = rows.filter((s) => s.model === m); const c = sum(r, (s) => s.calls); return { id: m, model: m, sessions: r.length, tokens: sum(r, (s) => s.tokens), calls: c, rate: c ? sum(r, (s) => s.errors) / c : null }; });
+  O.sortableTable($("modelTable"), [
+    { key: "model", label: "Model", render: (r) => el("span", { class: "tool-badge" }, O.dot(MODELS[r.model]), r.model) },
+    { key: "sessions", label: "Sessions", align: "r", render: (r) => el("span", { class: "num" }, O.fmtN(r.sessions)) },
+    { key: "tokens", label: "Tokens", align: "r", render: (r) => el("span", { class: "num" }, O.fmtK(r.tokens), el("span", { class: "share" }, el("i", { class: "grow-x", style: `width:${(r.tokens / total) * 100}%` }))) },
+    { key: "calls", label: "Tool calls", align: "r", render: (r) => el("span", { class: "num" }, O.fmtN(r.calls)) },
+    { key: "rate", label: "Error rate", align: "r", render: (r) => el("span", { class: "num" + (r.rate > 0.05 ? " t-err" : "") }, r.rate == null ? "–" : O.fmtPct(r.rate)) },
+  ], mrows, { sort: { key: "tokens", dir: -1 }, label: "Models" });
+
+  const tk = { cache_read: 0.78, cache_write: 0.12, input: 0.07, output: 0.03 };
+  $("ctxMap").replaceChildren(O.compositionBar([
+    { label: "Cache read", value: Math.round(total * tk.cache_read), color: "--cat-1" }, { label: "Cache write", value: Math.round(total * tk.cache_write), color: "--cat-3" },
+    { label: "Fresh input", value: Math.round(total * tk.input), color: "--cat-6" }, { label: "Output", value: Math.round(total * tk.output), color: "--cat-4" }],
+  { label: "Token composition", kv: [["LLM calls", O.fmtN(sum(rows, (s) => s.llm))], ["Cost", el("span", { class: "nl" }, "not logged")]] }));
+
+  const byProject = PROJECTS.map((p) => { const r = rows.filter((s) => s.project === p); return { p, n: r.length, tokens: sum(r, (s) => s.tokens), errors: sum(r, (s) => s.errors) }; }).filter((x) => x.n).sort((a, b) => b.tokens - a.tokens);
+  $("projects").replaceChildren(O.barList(byProject.map((x) => ({ label: x.p, value: x.tokens, meta: `${x.n} sess`, pill: x.errors > 20 ? O.pill(`${x.errors} err`, "err") : null, tip: `${x.p}\n${x.n} sessions · ${x.errors} errors` })), { format: O.fmtK }));
+  const byTask = TASKS.map((t) => ({ t, n: rows.filter((s) => s.task === t).length })).filter((x) => x.n).sort((a, b) => (a.t === "other") - (b.t === "other") || b.n - a.n);
+  $("tasks").replaceChildren(O.barList(byTask.map((x) => ({ label: x.t, value: x.n, tip: `${x.t}: ${x.n} sessions`, color: x.t === "other" ? "--kind-other" : null }))));
+}
+
+/* sessions list */
+const search = O.searchBox({ placeholder: "Search title, project, model, id", label: "Search sessions", kbd: "/", onInput: (v) => { state.q = v; renderSessions(); } });
+const taskSel = el("select", { class: "chip", "aria-label": "Task type", onchange: (e) => { state.task = e.target.value; renderSessions(); } }, el("option", { value: "all" }, "All task types"), TASKS.map((t) => el("option", { value: t }, t)));
+const results = el("span", { class: "results", "aria-live": "polite" });
+$("sessToolbar").append(search.label, taskSel,
+  O.toggleChip("Has errors", { onChange: (on) => { state.errOnly = on; renderSessions(); } }),
+  O.toggleChip("Health under 70", { onChange: (on) => { state.lowOnly = on; renderSessions(); } }), results);
+const sessTable = O.sortableTable($("sessTable"), [
+  { key: "tool", label: "Tool", render: (s) => toolBadge(s.tool) },
+  { key: "title", label: "Session", render: (s) => el("span", { class: "trunc emph" }, s.title), value: (s) => s.title.toLowerCase() },
+  { key: "project", label: "Project" },
+  { key: "start", label: "Start", render: (s) => el("span", { class: "num" }, s.start), value: (s) => s.day * 1e4 + parseInt(s.start.slice(-5).replace(":", ""), 10) },
+  { key: "active", label: "Duration", align: "r", render: (s) => el("span", { class: "num" }, O.fmtDur(s.active)) },
+  { key: "calls", label: "Tool calls", align: "r", render: (s) => O.splitBar(s.calls - s.errors, s.errors, { label: true }) },
+  { key: "errors", label: "Errors", align: "r", render: (s) => (s.errors ? O.pill(O.fmtN(s.errors), "err") : el("span", { class: "num zero" }, "0")) },
+  { key: "tokens", label: "Tokens", align: "r", render: (s) => el("span", { class: "num" }, O.fmtK(s.tokens)) },
+  { key: "model", label: "Model", render: (s) => el("span", { class: "tool-badge t-meta" }, O.dot(MODELS[s.model]), s.model) },
+  { key: "health", label: "Health", align: "r", render: (s) => O.healthDot(s.health, { tip: `Heuristic health ${s.health}/100\n${s.errors} failed of ${s.calls} calls` }) },
+], [], { sort: { key: "tokens", dir: -1 }, label: "Sessions", empty: "No sessions match. Clear the search or turn off a filter.",
+  onRowClick: (s, tr) => openSession(s.id, tr), onRender: (rows) => (results.textContent = `${rows.length} of ${scoped().length} sessions`) });
+function renderSessions() {
+  const q = state.q.trim().toLowerCase();
+  sessTable.setRows(scoped().filter((s) => (state.task === "all" || s.task === state.task) && (!state.errOnly || s.errors > 0) && (!state.lowOnly || s.health < 70)
+    && (!q || [s.title, s.project, s.model, s.id].some((x) => x.toLowerCase().includes(q)))));
+  tabBar.setCount("sessions", scoped().length);
+}
+
+/* scores */
+let hist;
+function renderScores(rows) {
+  const calls = sum(rows, (s) => s.calls), fails = sum(rows, (s) => s.errors), retries = sum(rows, (s) => s.trace.filter((x) => x.retry).length);
+  const avgH = rows.length ? sum(rows, (s) => s.health) / rows.length : null;
+  $("scoreCards").replaceChildren(
+    O.scoreCard({ label: "Tool success rate", value: calls ? 1 - fails / calls : null, format: (x) => O.fmtPct(x, 1), ring: calls ? 1 - fails / calls : null, foot: `${O.fmtN(calls - fails)} of ${O.fmtN(calls)} calls` }),
+    O.scoreCard({ label: "Retries", value: retries, ring: fails ? Math.min(1, retries / fails) : null, ringTip: "retried after a failure", foot: `${O.fmtN(fails)} failed calls` }),
+    O.scoreCard({ label: "Avg session health", value: avgH, format: (x) => (x == null ? "not logged" : x.toFixed(0) + "/100"), ring: avgH == null ? null : avgH / 100, foot: `${rows.length} sessions` }),
+    O.scoreCard({ label: "Prompts per session", value: rows.length ? sum(rows, (s) => s.prompts) / rows.length : null, format: (x) => (x == null ? "not logged" : x.toFixed(1)), foot: "turns started by a prompt" }));
+  O.heatStrip($("heat"), rows.slice().sort((a, b) => a.day - b.day).map((s) => ({ id: s.id, label: s.title, score: s.calls ? s.health : null, tip: `${s.title}\n${TOOLS[s.tool].label} · ${s.start}\nhealth ${s.health} · ${s.errors} errors` })),
+    { onSelect: (c, btn) => openSession(c.id, btn) });
+  $("heatLegend").replaceChildren(O.heatLegend([85, 70], "no tool calls"));
+  if (hist) hist.update(rows.map((s) => s.health));
+  else hist = O.histogram($("healthChart"), rows.map((s) => s.health), { height: 260, label: "Distribution of session health", unit: "sessions" });
+  const byTool = {};
+  rows.forEach((s) => s.trace.filter((x) => x.kind !== "turn" && x.kind !== "llm").forEach((x) => { const b = byTool[x.name] || (byTool[x.name] = { n: 0, f: 0 }); b.n++; if (!x.ok) b.f++; }));
+  const tr = Object.entries(byTool).filter(([, v]) => v.n >= 5).map(([k, v]) => ({ k, sr: 1 - v.f / v.n, n: v.n })).sort((a, b) => a.sr - b.sr).slice(0, 8);
+  $("toolSuccess").replaceChildren(O.barList(tr.map((x) => ({ label: x.k, value: x.sr, meta: `${x.n} calls`, mono: true, tone: x.sr >= 0.97 ? "ok" : x.sr >= 0.9 ? "warn" : "err" })), { format: (v) => O.fmtPct(v, 1), max: 1 }));
+}
+
+/* drawer: stat strip + waterfall + detail */
+const byId = Object.fromEntries(SESSIONS.map((s) => [s.id, s]));
+let current = null;
+const dr = O.drawer({ element: $("drawer"), scrim: $("scrim"), initialFocus: () => $("wf"), onClose: () => { current = null; sessTable.select(null); } });
+const wf = O.waterfall($("wf"), [], { controls: $("drControls"), detail: $("detail"), keyScope: $("drawer"),
+  summary: () => current ? el("div", { class: "kids" }, el("h4", {}, "Session"), O.kvList([["Tool", TOOLS[current.tool].label], ["Session id", current.id], ["Health", `${current.health}/100 (heuristic)`], ["Model", current.model], ["Task", current.task + " (heuristic)"]])) : el("span") });
+function openSession(id, opener) {
+  const s = byId[id]; if (!s) return;
+  current = s;
+  dr.lead.replaceChildren(toolBadge(s.tool));
+  dr.setTitle(s.title);
+  dr.tag.replaceChildren(O.pill(s.id, null, { class: "mono", "data-tip": s.id }));
+  $("drStrip").replaceChildren(O.statStrip([{ label: "Active", value: O.fmtDur(s.active) }, { label: "Tokens", value: O.fmtK(s.tokens) }, { label: "LLM calls", value: O.fmtN(s.llm) },
+    { label: "Tool calls", value: O.fmtN(s.calls) }, { label: "Errors", value: O.fmtN(s.errors), tone: s.errors ? "err" : null }, { label: "Health", value: s.health + "/100", tone: O.toneOf(s.health) }]));
+  $("drStats").replaceChildren(O.statLine([["project", s.project], ["start", s.start], ["prompts", String(s.prompts)], ["model", s.model], ["task", s.task + " (heuristic)"]]));
+  wf.setSpans(s.trace);
+  sessTable.select(id);
+  dr.open(opener);
+}
+
+function renderAll() {
+  const rows = scoped();
+  renderKpis(rows); renderOverview(rows); renderSessions(); renderScores(rows);
+}
+renderAll();
+const h = (location.hash || "").slice(1);
+if (["overview", "sessions", "scores"].includes(h)) tabBar.select(h);
+
+/* `/` outside an input opens Sessions and focuses search */
+addEventListener("keydown", (e) => {
+  if (e.key !== "/" || dr.isOpen || e.metaKey || e.ctrlKey || /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) return;
+  e.preventDefault(); tabBar.select("sessions", true); search.input.focus();
+});
+/* /region: wiring */
+})();
+</script>
+</body>
+</html>

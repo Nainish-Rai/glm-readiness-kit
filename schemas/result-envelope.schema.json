@@ -1,0 +1,1154 @@
+{
+  "$defs": {
+    "Artifact": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "description": "traces | log | junit | ...",
+          "title": "Kind",
+          "type": "string"
+        },
+        "path": {
+          "description": "Path relative to the run directory",
+          "title": "Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "path"
+      ],
+      "title": "Artifact",
+      "type": "object"
+    },
+    "CheckResult": {
+      "additionalProperties": false,
+      "properties": {
+        "attempt": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Attempt index; None for aggregate checks",
+          "title": "Attempt"
+        },
+        "expected": {
+          "default": null,
+          "title": "Expected"
+        },
+        "message": {
+          "default": "",
+          "title": "Message",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "observed": {
+          "default": null,
+          "title": "Observed"
+        },
+        "soft": {
+          "default": false,
+          "title": "Soft",
+          "type": "boolean"
+        },
+        "status": {
+          "enum": [
+            "pass",
+            "fail",
+            "soft_fail",
+            "skip",
+            "error"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "status"
+      ],
+      "title": "CheckResult",
+      "type": "object"
+    },
+    "Exchange": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "label": {
+          "default": "main",
+          "title": "Label",
+          "type": "string"
+        },
+        "mode": {
+          "enum": [
+            "nonstream",
+            "stream"
+          ],
+          "title": "Mode",
+          "type": "string"
+        },
+        "normalized": {
+          "$ref": "#/$defs/NormalizedResponse"
+        },
+        "protocol": {
+          "title": "Protocol",
+          "type": "string"
+        },
+        "request": {
+          "$ref": "#/$defs/HttpRequestRecord"
+        },
+        "response": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/HttpResponseRecord"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "timing": {
+          "$ref": "#/$defs/Timing"
+        },
+        "transport_error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "connect error, timeout, stream_timeout ...",
+          "title": "Transport Error"
+        }
+      },
+      "required": [
+        "id",
+        "protocol",
+        "mode",
+        "request"
+      ],
+      "title": "Exchange",
+      "type": "object"
+    },
+    "HttpRequestRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "body": {
+          "default": null,
+          "title": "Body"
+        },
+        "body_bytes": {
+          "default": 0,
+          "title": "Body Bytes",
+          "type": "integer"
+        },
+        "headers": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Sensitive headers are '[REDACTED]'",
+          "title": "Headers",
+          "type": "object"
+        },
+        "method": {
+          "default": "POST",
+          "title": "Method",
+          "type": "string"
+        },
+        "url": {
+          "title": "Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "url"
+      ],
+      "title": "HttpRequestRecord",
+      "type": "object"
+    },
+    "HttpResponseRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "body_json": {
+          "default": null,
+          "title": "Body Json"
+        },
+        "body_text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Raw body, truncated to 65536 chars",
+          "title": "Body Text"
+        },
+        "content_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Content Type"
+        },
+        "events": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/SSEEventRecord"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "SSE events for streamed responses",
+          "title": "Events"
+        },
+        "events_truncated": {
+          "default": false,
+          "title": "Events Truncated",
+          "type": "boolean"
+        },
+        "headers": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Headers",
+          "type": "object"
+        },
+        "status": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Status"
+        },
+        "truncated": {
+          "default": false,
+          "title": "Truncated",
+          "type": "boolean"
+        }
+      },
+      "title": "HttpResponseRecord",
+      "type": "object"
+    },
+    "ItemResult": {
+      "additionalProperties": false,
+      "properties": {
+        "category": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Category"
+        },
+        "checks": {
+          "items": {
+            "$ref": "#/$defs/CheckResult"
+          },
+          "title": "Checks",
+          "type": "array"
+        },
+        "data": {
+          "additionalProperties": true,
+          "description": "Component-specific payload",
+          "title": "Data",
+          "type": "object"
+        },
+        "duration_ms": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Duration Ms"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/Exchange"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "group": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Grouping key, e.g. the case id 'WIRE-001'",
+          "title": "Group"
+        },
+        "id": {
+          "description": "Unique within the envelope, e.g. 'WIRE-001[nonstream]'",
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "default": "item",
+          "description": "conformance_case | fix_event | eval_item | ...",
+          "title": "Kind",
+          "type": "string"
+        },
+        "labels": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "mode, variant, protocol ...",
+          "title": "Labels",
+          "type": "object"
+        },
+        "metrics": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": "Metrics",
+          "type": "object"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Why skipped/errored, or a one-line failure summary",
+          "title": "Reason"
+        },
+        "severity": {
+          "anyOf": [
+            {
+              "enum": [
+                "critical",
+                "major",
+                "minor",
+                "info"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Severity"
+        },
+        "source": {
+          "additionalProperties": true,
+          "description": "Provenance (issue URLs, doc URLs)",
+          "title": "Source",
+          "type": "object"
+        },
+        "status": {
+          "enum": [
+            "pass",
+            "fail",
+            "soft_fail",
+            "skip",
+            "error",
+            "throttled"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "target": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Target profile name this item ran against",
+          "title": "Target"
+        },
+        "title": {
+          "default": "",
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "status"
+      ],
+      "title": "ItemResult",
+      "type": "object"
+    },
+    "NormToolCall": {
+      "additionalProperties": false,
+      "properties": {
+        "arguments": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Arguments exactly as received (JSON string)",
+          "title": "Arguments"
+        },
+        "arguments_parsed": {
+          "default": null,
+          "title": "Arguments Parsed"
+        },
+        "id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Id"
+        },
+        "index": {
+          "default": 0,
+          "title": "Index",
+          "type": "integer"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "parse_error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parse Error"
+        }
+      },
+      "title": "NormToolCall",
+      "type": "object"
+    },
+    "NormUsage": {
+      "additionalProperties": false,
+      "description": "Usage in the OpenAI/OTel convention: prompt_tokens includes cached tokens.",
+      "properties": {
+        "cached_tokens": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cached Tokens"
+        },
+        "completion_tokens": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Completion Tokens"
+        },
+        "prompt_tokens": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Prompt Tokens"
+        },
+        "raw": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Raw"
+        },
+        "reasoning_tokens": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reasoning Tokens"
+        },
+        "source_convention": {
+          "anyOf": [
+            {
+              "enum": [
+                "openai",
+                "anthropic"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Convention"
+        },
+        "total_tokens": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Total Tokens"
+        }
+      },
+      "title": "NormUsage",
+      "type": "object"
+    },
+    "NormalizedResponse": {
+      "additionalProperties": false,
+      "description": "Protocol-neutral view of a response; checks read this.",
+      "properties": {
+        "content": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Content"
+        },
+        "error_code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Z.ai business code as a string ('1210')",
+          "title": "Error Code"
+        },
+        "error_code_type": {
+          "anyOf": [
+            {
+              "enum": [
+                "string",
+                "integer"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Error Code Type"
+        },
+        "error_message": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Error Message"
+        },
+        "error_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Error Type"
+        },
+        "finish_reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Raw finish_reason / stop_reason",
+          "title": "Finish Reason"
+        },
+        "finish_reason_norm": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "stop | tool_calls | length | other value",
+          "title": "Finish Reason Norm"
+        },
+        "http_status": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Http Status"
+        },
+        "model": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model"
+        },
+        "ok": {
+          "default": false,
+          "title": "Ok",
+          "type": "boolean"
+        },
+        "reasoning": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reasoning"
+        },
+        "stream": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/StreamMeta"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "tool_calls": {
+          "items": {
+            "$ref": "#/$defs/NormToolCall"
+          },
+          "title": "Tool Calls",
+          "type": "array"
+        },
+        "usage": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/NormUsage"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "NormalizedResponse",
+      "type": "object"
+    },
+    "SSEEventRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "data": {
+          "description": "Parsed JSON when possible, else the raw data string ('[DONE]' stays a string)",
+          "title": "Data"
+        },
+        "event": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Event"
+        },
+        "t_ms": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Milliseconds since the request was sent",
+          "title": "T Ms"
+        }
+      },
+      "required": [
+        "data"
+      ],
+      "title": "SSEEventRecord",
+      "type": "object"
+    },
+    "StreamMeta": {
+      "additionalProperties": false,
+      "properties": {
+        "done_seen": {
+          "default": false,
+          "description": "OpenAI '[DONE]' or Anthropic 'message_stop' seen",
+          "title": "Done Seen",
+          "type": "boolean"
+        },
+        "event_count": {
+          "default": 0,
+          "title": "Event Count",
+          "type": "integer"
+        },
+        "finish_events": {
+          "default": 0,
+          "description": "Events that carried a finish/stop reason",
+          "title": "Finish Events",
+          "type": "integer"
+        },
+        "first_usage": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Usage carried by the first event (Anthropic message_start)",
+          "title": "First Usage"
+        },
+        "parse_errors": {
+          "default": 0,
+          "title": "Parse Errors",
+          "type": "integer"
+        },
+        "role_events": {
+          "default": 0,
+          "title": "Role Events",
+          "type": "integer"
+        },
+        "timed_out": {
+          "default": false,
+          "title": "Timed Out",
+          "type": "boolean"
+        }
+      },
+      "title": "StreamMeta",
+      "type": "object"
+    },
+    "Summary": {
+      "additionalProperties": false,
+      "properties": {
+        "errored": {
+          "default": 0,
+          "title": "Errored",
+          "type": "integer"
+        },
+        "failed": {
+          "default": 0,
+          "title": "Failed",
+          "type": "integer"
+        },
+        "hard_gate_failures": {
+          "default": 0,
+          "description": "Failed items with severity critical",
+          "title": "Hard Gate Failures",
+          "type": "integer"
+        },
+        "pass_rate": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "passed / (total - skipped - throttled)",
+          "title": "Pass Rate"
+        },
+        "passed": {
+          "default": 0,
+          "title": "Passed",
+          "type": "integer"
+        },
+        "skipped": {
+          "default": 0,
+          "title": "Skipped",
+          "type": "integer"
+        },
+        "soft_failed": {
+          "default": 0,
+          "title": "Soft Failed",
+          "type": "integer"
+        },
+        "throttled": {
+          "default": 0,
+          "title": "Throttled",
+          "type": "integer"
+        },
+        "total": {
+          "default": 0,
+          "title": "Total",
+          "type": "integer"
+        }
+      },
+      "title": "Summary",
+      "type": "object"
+    },
+    "TargetInfo": {
+      "additionalProperties": false,
+      "description": "A target as recorded in results. Never holds a key: only the env var name and whether it was set.",
+      "properties": {
+        "api_key_env": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Api Key Env"
+        },
+        "base_url": {
+          "title": "Base Url",
+          "type": "string"
+        },
+        "endpoint_class": {
+          "enum": [
+            "api",
+            "plan",
+            "third_party",
+            "self_hosted"
+          ],
+          "title": "Endpoint Class",
+          "type": "string"
+        },
+        "key_present": {
+          "default": false,
+          "title": "Key Present",
+          "type": "boolean"
+        },
+        "model": {
+          "title": "Model",
+          "type": "string"
+        },
+        "profile": {
+          "title": "Profile",
+          "type": "string"
+        },
+        "protocol": {
+          "enum": [
+            "openai_chat",
+            "anthropic_messages"
+          ],
+          "title": "Protocol",
+          "type": "string"
+        },
+        "provider": {
+          "title": "Provider",
+          "type": "string"
+        },
+        "title": {
+          "default": "",
+          "title": "Title",
+          "type": "string"
+        },
+        "url": {
+          "title": "Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "profile",
+        "provider",
+        "base_url",
+        "url",
+        "protocol",
+        "endpoint_class",
+        "model"
+      ],
+      "title": "TargetInfo",
+      "type": "object"
+    },
+    "Timing": {
+      "additionalProperties": false,
+      "properties": {
+        "total_ms": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Total Ms"
+        },
+        "ttfb_ms": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Time to first response byte",
+          "title": "Ttfb Ms"
+        },
+        "ttft_ms": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Time to first token: first event carrying reasoning, text or a tool call",
+          "title": "Ttft Ms"
+        }
+      },
+      "title": "Timing",
+      "type": "object"
+    }
+  },
+  "$id": "https://github.com/glm-readiness-kit/glmkit/schemas/result-envelope.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "artifacts": {
+      "items": {
+        "$ref": "#/$defs/Artifact"
+      },
+      "title": "Artifacts",
+      "type": "array"
+    },
+    "component": {
+      "description": "conform | bridge | eval | guard | cost | deploy | evidence | ...",
+      "title": "Component",
+      "type": "string"
+    },
+    "config": {
+      "additionalProperties": true,
+      "description": "Run options (no secrets)",
+      "title": "Config",
+      "type": "object"
+    },
+    "data": {
+      "additionalProperties": true,
+      "description": "Component-specific payload",
+      "title": "Data",
+      "type": "object"
+    },
+    "environment": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Environment",
+      "type": "object"
+    },
+    "finished_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Finished At"
+    },
+    "items": {
+      "items": {
+        "$ref": "#/$defs/ItemResult"
+      },
+      "title": "Items",
+      "type": "array"
+    },
+    "kit_version": {
+      "default": "0.1.0",
+      "title": "Kit Version",
+      "type": "string"
+    },
+    "run_id": {
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "started_at": {
+      "format": "date-time",
+      "title": "Started At",
+      "type": "string"
+    },
+    "summary": {
+      "$ref": "#/$defs/Summary"
+    },
+    "targets": {
+      "items": {
+        "$ref": "#/$defs/TargetInfo"
+      },
+      "title": "Targets",
+      "type": "array"
+    },
+    "verdict": {
+      "default": "incomplete",
+      "enum": [
+        "pass",
+        "warn",
+        "fail",
+        "error",
+        "incomplete"
+      ],
+      "title": "Verdict",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "component",
+    "started_at"
+  ],
+  "title": "ResultEnvelope",
+  "type": "object"
+}

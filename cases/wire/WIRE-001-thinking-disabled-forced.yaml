@@ -1,0 +1,42 @@
+schema_version: 1
+id: WIRE-001
+title: "thinking: disabled on forced-thinking GLM-5.3 returns 400/1210 on the API class, never 5xx"
+category: wire/errors
+severity: critical
+kind: deterministic
+applies_to:
+  models: [glm-5.3, glm-5.3-flash]
+  protocols: [openai_chat, anthropic_messages]
+  endpoint_classes: [api, plan, third_party, self_hosted]
+source:
+  issues: ["farion1231/cc-switch#6737"]
+  urls: ["https://github.com/farion1231/cc-switch/issues/6737"]
+  spec:
+    - https://docs.z.ai/guides/capabilities/thinking.md
+    - https://docs.z.ai/devpack/latest-model
+    - https://docs.z.ai/api-reference/api-code.md
+  first_seen: 2026-10-01
+modes: [nonstream]
+request:
+  messages:
+    - {role: user, content: "Reply OK"}
+  max_tokens: 32
+  params:
+    thinking: {type: disabled}
+expect:
+  # every class: a documented input must never crash the host or leak a stack trace
+  default:
+    - {check: no_5xx}
+    - {check: no_internal_leak}
+  # standard API: thinking cannot be disabled on GLM-5.3 -> 400 with business code 1210
+  api:
+    - {check: http_status, equals: 400}
+    - {check: error_code, in: ["1210"]}
+    - {check: error_shape}
+  # Coding Plan: docs say it is converted to effort low and proceeds; cc-switch saw 400/1210. Record, soft.
+  plan:
+    - {check: http_status, in: [200, 400], soft: true}
+    - {check: error_code, in: ["1210"], soft: true, when: {check: http_status, equals: 400}}
+notes: >
+  Third-party and self-hosted hosts may accept (200) or reject (400); both are fine as long as they never
+  answer 5xx. Planted defect: forced-thinking-500 (500 + Python traceback).

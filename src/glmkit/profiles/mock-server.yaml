@@ -1,0 +1,10 @@
+name: mock-server
+title: Mock GLM (external `glmkit mock serve`, OpenAI-compatible)
+provider: mock
+base_url: ${GLMKIT_MOCK_URL:-http://127.0.0.1:8765}/api/paas/v4
+protocol: openai_chat
+endpoint_class: api
+model: glm-5.3
+api_key_env: GLMKIT_MOCK_API_KEY
+api_key_required: false
+notes: Start the server first with `glmkit mock serve` (defects via --defect, per request via --mock-defect).

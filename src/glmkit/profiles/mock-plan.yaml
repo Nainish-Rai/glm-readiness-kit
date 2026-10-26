@@ -1,0 +1,11 @@
+name: mock-plan
+title: Mock GLM (in-process, OpenAI-compatible, Coding Plan class)
+provider: mock
+base_url: "{mock}/api/coding/paas/v4"
+protocol: openai_chat
+endpoint_class: plan
+model: glm-5.3
+api_key_env: GLMKIT_MOCK_API_KEY
+api_key_required: false
+spawn_mock: true
+notes: The mock treats any path containing /coding/ as the Coding Plan class.

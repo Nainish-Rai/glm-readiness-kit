@@ -1,0 +1,12 @@
+name: vllm-local
+title: Local vLLM (self-hosted)
+provider: vllm
+base_url: ${GLMKIT_VLLM_BASE_URL:-http://localhost:8000/v1}
+protocol: openai_chat
+endpoint_class: self_hosted
+model: zai-org/GLM-5.3-FP8
+model_family: glm-5.3
+api_key_env: VLLM_API_KEY
+api_key_required: false
+notes: "Expected flags: --tool-call-parser glm47 --reasoning-parser glm45. The served model name must match `model`."
+sources: ["research/01-conformance.md §2.6"]
