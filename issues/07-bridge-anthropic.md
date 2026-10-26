@@ -1,6 +1,6 @@
 # 07 · Bridge: Anthropic Messages path (Claude Code ready)
 
-Status: blocked · Type: AFK · Label: ready-for-agent · Branch: issue/07-bridge-anthropic
+Status: in-progress · Type: AFK · Label: ready-for-agent · Branch: issue/07-bridge-anthropic
 
 ## What to build
 

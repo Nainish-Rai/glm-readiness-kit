@@ -11,9 +11,9 @@ Statuses: `ready` → `in-progress` → `review` → `done` (or `blocked`). Labe
 | 04 | [Conformance: thinking, streaming, cache, language](04-conform-thinking-stream.md) | AFK | 01 | in-progress |
 | 05 | [Conformance: latency + downgrade fingerprinting](05-conform-latency-fingerprint.md) | AFK | 01 | in-progress |
 | 06 | [Bridge core + OpenAI-compatible proxy](06-bridge-core-openai.md) | AFK | 01 | done |
-| 07 | [Bridge: Anthropic Messages path](07-bridge-anthropic.md) | AFK | 06 | blocked |
-| 08 | [Bridge: LiteLLM plugin adapter](08-bridge-litellm.md) | AFK | 06 | blocked |
-| 09 | [Spend and loop guard](09-guard.md) | AFK | 06 | blocked |
+| 07 | [Bridge: Anthropic Messages path](07-bridge-anthropic.md) | AFK | 06 | in-progress |
+| 08 | [Bridge: LiteLLM plugin adapter](08-bridge-litellm.md) | AFK | 06 | in-progress |
+| 09 | [Spend and loop guard](09-guard.md) | AFK | 06 | in-progress |
 | 10 | [Migration eval engine](10-eval-engine.md) | AFK | 01 | in-progress |
 | 11 | [Trace importers](11-trace-importers.md) | AFK | 01 | done |
 | 12 | [Cost and cache forensics](12-cost-forensics.md) | AFK | 01 | done |
