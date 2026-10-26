@@ -1,0 +1,20 @@
+/* Cost tab. Tokens only. */
+.turns { display: flex; align-items: flex-end; gap: var(--space-2); height: 150px; padding: var(--space-3) var(--space-2) 0; }
+.turn { flex: 1 1 0; min-width: 0; max-width: 72px; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: stretch; gap: 4px; background: none; border: 0; padding: 0; cursor: pointer; border-radius: var(--radius-2); color: inherit; font: inherit; }
+.turn:hover .tbar { filter: brightness(1.2); }
+.turn[aria-pressed="true"] { outline: 1px solid var(--accent); outline-offset: 2px; }
+.turn .tbar { position: relative; background: var(--surface-raised); border-radius: var(--radius-2); overflow: hidden; flex: 1 1 auto; display: flex; align-items: flex-end; }
+.turn .tfill { width: 100%; background: var(--ok-tint); border-top: 2px solid var(--ok); border-radius: var(--radius-1) var(--radius-1) 0 0; transform-origin: bottom; }
+.turn.is-break .tfill { background: var(--err-tint); border-top-color: var(--err); }
+.turn.is-nolog .tbar { border: 1px dashed var(--edge-strong); background: transparent; }
+.turn .tmark { height: 16px; text-align: center; font: var(--text-num) var(--font-mono); color: var(--err); }
+.turn .tlab { text-align: center; font: var(--text-meta) var(--font-mono); color: var(--fg-meta); }
+.turn.first .tlab { color: var(--err); }
+.cost-axis { display: flex; justify-content: space-between; padding: 0 var(--space-3); font: var(--text-meta) var(--font-mono); color: var(--fg-faint); }
+.cause-detail { display: grid; gap: var(--space-2); font-size: var(--text-body); }
+.cause-detail .well { overflow-wrap: anywhere; }
+.assume { margin: 0; padding-left: var(--space-5); display: grid; gap: var(--space-2); color: var(--fg-body); font-size: var(--text-body); }
+.assume li { overflow-wrap: anywhere; }
+.num-nl { color: var(--fg-faint); }
+@media (max-width: 520px) { .turns { gap: var(--space-1); } }
+@media (prefers-reduced-motion: reduce) { .turn .tbar { transition: none; } }

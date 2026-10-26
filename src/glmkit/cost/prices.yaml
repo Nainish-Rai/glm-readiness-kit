@@ -1,0 +1,81 @@
+# Versioned price table for glmkit (issue 12). Public API: glmkit.cost.prices (see docs/contracts.md, "Price table").
+# Rules: every entry carries `source` (URL) and `retrieved` (date). A price the sources do not give is `null`
+# and reads "not logged" everywhere; it is never guessed. Prices are USD per 1M tokens.
+# Override the file with $GLMKIT_PRICES or load_price_table(path).
+version: 1
+currency: USD
+unit: per_million_tokens
+updated: 2026-10-26
+
+prices:
+  # --- Z.ai pay-as-you-go list prices (docs.z.ai pricing page) --------------------------------------------
+  - {host: zai-api, model: glm-5.3, input: 1.4, cached_input: 0.26, output: 4.4,
+     source: "https://docs.z.ai/guides/overview/pricing.md", retrieved: 2026-10-26}
+  - {host: zai-api, model: glm-5.3-flash, input: 0.15, cached_input: 0.03, output: 0.50,
+     source: "https://docs.z.ai/guides/overview/pricing.md", retrieved: 2026-10-26}
+  - {host: zai-api, model: glm-5.3-flashx, input: 0.37, cached_input: 0.075, output: 1.25,
+     source: "https://docs.z.ai/guides/overview/pricing.md", retrieved: 2026-10-26}
+  - {host: zai-api, model: glm-5.2, input: 1.4, cached_input: 0.26, output: 4.4,
+     source: "https://docs.z.ai/guides/overview/pricing.md", retrieved: 2026-10-26}
+  - {host: zai-api, model: glm-5.1, input: 1.4, cached_input: 0.26, output: 4.4,
+     source: "https://docs.z.ai/guides/overview/pricing.md", retrieved: 2026-10-26}
+  - {host: zai-api, model: glm-5, input: 1.0, cached_input: 0.2, output: 3.2,
+     source: "https://docs.z.ai/guides/overview/pricing.md", retrieved: 2026-10-26}
+  - {host: zai-api, model: glm-4.7, input: 0.6, cached_input: 0.11, output: 2.2,
+     source: "https://docs.z.ai/guides/overview/pricing.md", retrieved: 2026-10-26}
+  - {host: zai-api, model: glm-4.6, input: 0.6, cached_input: 0.11, output: 2.2,
+     source: "https://docs.z.ai/guides/overview/pricing.md", retrieved: 2026-10-26}
+  # --- Third-party hosts ----------------------------------------------------------------------------------
+  # OpenRouter lists 20+ providers for GLM-5.3 between ~$0.50/$2.00 and $1.40/$4.40. Per-provider cached-input
+  # prices were not recorded, so they stay null.
+  - {host: openrouter-cheapest, model: glm-5.3, input: 0.50, cached_input: null, output: 2.00,
+     source: "https://openrouter.ai/z-ai/glm-5.3", retrieved: 2026-10-26,
+     note: "low end of the provider range; cached-input price not logged"}
+  - {host: openrouter-priciest, model: glm-5.3, input: 1.40, cached_input: null, output: 4.40,
+     source: "https://openrouter.ai/z-ai/glm-5.3", retrieved: 2026-10-26,
+     note: "high end of the provider range; cached-input price not logged"}
+  # Bedrock: GA announced 2026-10-05 with explicit prompt caching, but the sources recorded no price.
+  - {host: bedrock, model: glm-5.3, input: null, cached_input: null, output: null,
+     source: "https://aws.amazon.com/about-aws/whats-new/2026/10/amazon-bedrock-glm-5-3/", retrieved: 2026-10-26,
+     note: "price not logged; look it up on the Bedrock pricing page for the region"}
+
+# --- GLM Coding Plan (credits / points model) ---------------------------------------------------------------
+# Published: tier prices, 5-hour and weekly credit caps, the peak window and the 50% off-peak rate.
+# NOT published (not logged): credits charged per token for input / cached / output, so credits needed by a
+# workload can only be computed with a user-supplied, heuristic conversion (see projection.py).
+coding_plan:
+  tiers:
+    - {name: Lite, usd_per_month: 18, credits_5h: 2000, credits_weekly: 10000,
+       source: "https://docs.z.ai/devpack/notice/usage-revision", retrieved: 2026-10-26}
+    - {name: Pro, usd_per_month: 80, credits_5h: 12000, credits_weekly: 60000,
+       source: "https://docs.z.ai/devpack/notice/usage-revision", retrieved: 2026-10-26}
+    - {name: Max, usd_per_month: 168, credits_5h: 28000, credits_weekly: 140000,
+       source: "https://docs.z.ai/devpack/notice/usage-revision", retrieved: 2026-10-26}
+  billing_discounts:   # fraction off the monthly price
+    - {period: quarterly, discount: 0.20, source: "https://www.aipricing.guru/z-ai-subscription-pricing/", retrieved: 2026-10-25}
+    - {period: yearly, discount: 0.30, source: "https://www.aipricing.guru/z-ai-subscription-pricing/", retrieved: 2026-10-25}
+  peak_window:
+    description: "14:00-18:00 UTC+8, weekdays"
+    tz: "Asia/Shanghai"
+    start_hour: 14
+    end_hour: 18
+    weekdays_only: true
+    source: "https://z.ai/blog/glm-5.3 (as quoted in zai-research/sources/applied.md §2.5)"
+    retrieved: 2026-10-26
+  off_peak_multiplier:   # published: "50% off-peak" (quota counted at half rate outside the peak window)
+    value: 0.5
+    source: "https://z.ai/blog/glm-5.3 (as quoted in zai-research/sources/applied.md §2.5)"
+    retrieved: 2026-10-26
+  reported_peak_multiplier:   # HEURISTIC: users report 3x to 5x quota burn in the Chinese afternoon peak; unofficial
+    value: 3.0
+    heuristic: true
+    source: "https://linux.do/t/topic/2551125 (user report, via zai-research/sources/china.md)"
+    retrieved: 2026-10-26
+  counted_tokens: "input, cached input and output are counted separately; MCP calls also count (china.md, Bitpush)"
+
+# --- Verbosity: output tokens per task by effort, relative to the stated base effort -------------------------
+# Only one ratio has a source ("43k tokens/task at Max vs about half at High"). Everything else stays
+# unlisted (not logged). Measured ratios from the user's own traces always win over these.
+effort_output_factor:
+  - {from: max, to: high, factor: 0.5, heuristic: true,
+     source: "https://news.ycombinator.com/item?id=49479878 (via zai-research/sources/applied.md §3 #8)", retrieved: 2026-10-26}
