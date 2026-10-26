@@ -1,6 +1,6 @@
 # 14 · Deploy: MoE sizing calculator + reference deployment
 
-Status: review · Type: AFK · Label: ready-for-agent · Branch: issue/14-deploy
+Status: done · Type: AFK · Label: ready-for-agent · Branch: issue/14-deploy
 
 ## What to build
 

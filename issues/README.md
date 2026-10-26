@@ -18,7 +18,7 @@ Statuses: `ready` → `in-progress` → `review` → `done` (or `blocked`). Labe
 | 11 | [Trace importers](11-trace-importers.md) | AFK | 01 | done |
 | 12 | [Cost and cache forensics](12-cost-forensics.md) | AFK | 01 | in-progress |
 | 13 | [FDE workbench + demo golden sets](13-fde-workbench.md) | AFK | 10 | blocked |
-| 14 | [Deploy: sizing calculator + reference deployment](14-deploy.md) | AFK | 01 | in-progress |
+| 14 | [Deploy: sizing calculator + reference deployment](14-deploy.md) | AFK | 01 | done |
 | 15 | [Evidence pack generator](15-evidence-pack.md) | AFK | 01 | in-progress |
 | 16 | [Live verification run](16-live-verification.md) | HITL | 02, 03, 04, 05 | blocked |
 | 17 | [Public readiness report + launch](17-public-report.md) | HITL | all | blocked |
