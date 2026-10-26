@@ -139,7 +139,6 @@ def run_demo(o: DemoOptions) -> int:
     env = dict(os.environ)
     env["GLMKIT_WORKSPACE"] = str(root)
     profile_dirs = [str(root / "profiles")]
-    prices: list[str] = []
     if o.mock:
         from glmkit.eval.demo import write_demo
 
@@ -148,9 +147,7 @@ def run_demo(o: DemoOptions) -> int:
         profiles_out.mkdir(exist_ok=True)
         for f in paths["profiles"].glob("*.yaml"):
             (profiles_out / f.name).write_text(f.read_text(encoding="utf-8"), encoding="utf-8")
-        (demo_dir / "prices.yaml").write_text(paths["prices"].read_text(encoding="utf-8"), encoding="utf-8")
-        profile_dirs.append(str(profiles_out))
-        prices = ["--prices", str(demo_dir / "prices.yaml")]
+        profile_dirs.append(str(profiles_out))  # mock models are priced by the canonical table (entries marked mock)
     env["GLMKIT_PROFILES_DIRS"] = os.pathsep.join(profile_dirs)
 
     failed = 0
@@ -186,7 +183,7 @@ def run_demo(o: DemoOptions) -> int:
     args = [
         "eval", "run", "--set", str(set_path.relative_to(root)), "--baseline", MOCK_BASELINE if o.mock else str(o.baseline),
         "--targets", ",".join(cand), "--out", "results", "--profiles-dir", "demo/profiles" if o.mock else "profiles",
-        "--seed", "7", *prices,
+        "--seed", "7",
     ]  # fmt: skip
     if judge:
         args += ["--judge", judge]
