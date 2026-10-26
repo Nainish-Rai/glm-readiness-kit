@@ -1,6 +1,6 @@
 # 08 · Bridge: LiteLLM plugin adapter
 
-Status: review · Type: AFK · Label: ready-for-agent · Branch: issue/08-bridge-litellm
+Status: done · Type: AFK · Label: ready-for-agent · Branch: issue/08-bridge-litellm
 
 ## What to build
 

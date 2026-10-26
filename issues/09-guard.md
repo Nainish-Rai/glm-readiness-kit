@@ -1,6 +1,6 @@
 # 09 · Spend and loop guard
 
-Status: review · Type: AFK · Label: ready-for-agent · Branch: issue/09-guard
+Status: done · Type: AFK · Label: ready-for-agent · Branch: issue/09-guard
 
 ## What to build
 

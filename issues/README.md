@@ -11,19 +11,19 @@ Statuses: `ready` → `in-progress` → `review` → `done` (or `blocked`). Labe
 | 04 | [Conformance: thinking, streaming, cache, language](04-conform-thinking-stream.md) | AFK | 01 | done |
 | 05 | [Conformance: latency + downgrade fingerprinting](05-conform-latency-fingerprint.md) | AFK | 01 | done |
 | 06 | [Bridge core + OpenAI-compatible proxy](06-bridge-core-openai.md) | AFK | 01 | done |
-| 07 | [Bridge: Anthropic Messages path](07-bridge-anthropic.md) | AFK | 06 | in-progress |
-| 08 | [Bridge: LiteLLM plugin adapter](08-bridge-litellm.md) | AFK | 06 | in-progress |
-| 09 | [Spend and loop guard](09-guard.md) | AFK | 06 | in-progress |
+| 07 | [Bridge: Anthropic Messages path](07-bridge-anthropic.md) | AFK | 06 | done |
+| 08 | [Bridge: LiteLLM plugin adapter](08-bridge-litellm.md) | AFK | 06 | done |
+| 09 | [Spend and loop guard](09-guard.md) | AFK | 06 | done |
 | 10 | [Migration eval engine](10-eval-engine.md) | AFK | 01 | done |
 | 11 | [Trace importers](11-trace-importers.md) | AFK | 01 | done |
 | 12 | [Cost and cache forensics](12-cost-forensics.md) | AFK | 01 | done |
-| 13 | [FDE workbench + demo golden sets](13-fde-workbench.md) | AFK | 10 | in-progress |
+| 13 | [FDE workbench + demo golden sets](13-fde-workbench.md) | AFK | 10 | done |
 | 14 | [Deploy: sizing calculator + reference deployment](14-deploy.md) | AFK | 01 | done |
 | 15 | [Evidence pack generator](15-evidence-pack.md) | AFK | 01 | done |
 | 16 | [Live verification run](16-live-verification.md) | HITL | 02, 03, 04, 05 | blocked |
 | 17 | [Public readiness report + launch](17-public-report.md) | HITL | all | blocked |
-| 18 | [Unify the price table](18-unify-prices.md) | AFK | 10, 12, 14 | in-progress |
-| 19 | [Unify the Z.ai error taxonomy in the bridge](19-unify-errors.md) | AFK | 03, 06, 07, 08, 09 | blocked |
+| 18 | [Unify the price table](18-unify-prices.md) | AFK | 10, 12, 14 | done |
+| 19 | [Unify the Z.ai error taxonomy in the bridge](19-unify-errors.md) | AFK | 03, 06, 07, 08, 09 | in-progress |
 
 ## Conventions every issue follows
 

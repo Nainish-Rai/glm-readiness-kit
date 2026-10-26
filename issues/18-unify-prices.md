@@ -1,6 +1,6 @@
 # 18 · Unify the price table
 
-Status: review · Type: AFK · Label: ready-for-agent · Branch: issue/18-unify-prices
+Status: done · Type: AFK · Label: ready-for-agent · Branch: issue/18-unify-prices
 
 ## What to build
 
