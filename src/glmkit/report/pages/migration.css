@@ -1,0 +1,34 @@
+/* Migration tab. Tokens only; positions are inline percentages set from data. */
+.mig-sel { display: flex; gap: var(--space-3); align-items: center; flex-wrap: wrap; padding: var(--space-3) var(--space-4) 0; }
+.mig-sel .lbl { color: var(--fg-meta); font-size: var(--text-meta); }
+.ci { position: relative; width: 220px; max-width: 100%; height: 18px; }
+.ci-axis { position: absolute; left: 0; right: 0; top: 8px; height: 1px; background: var(--edge-strong); }
+.ci-zero { position: absolute; top: 2px; bottom: 2px; width: 1px; background: var(--fg-meta); }
+.ci-margin { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1px dashed var(--warn); }
+.ci-span { position: absolute; top: 5px; height: 8px; border-radius: var(--radius-1); background: var(--accent-tint); border: 1px solid var(--accent); box-sizing: border-box; min-width: 2px; }
+.ci-span.ok { background: var(--ok-tint); border-color: var(--ok); }
+.ci-span.err { background: var(--err-tint); border-color: var(--err); }
+.ci-span.warn { background: var(--warn-tint); border-color: var(--warn); }
+.ci-dot { position: absolute; top: 4px; width: 3px; height: 10px; margin-left: -1px; background: var(--fg-emph); border-radius: 1px; }
+.ci-legend { display: flex; gap: var(--space-4); flex-wrap: wrap; padding: 0 var(--space-4) var(--space-3); color: var(--fg-meta); font-size: var(--text-meta); }
+.ci-legend i { display: inline-block; width: 12px; height: 0; border-top: 1px dashed var(--warn); vertical-align: middle; margin-right: 6px; }
+.rec { color: var(--fg-body); font-size: var(--text-meta); max-width: 340px; display: block; }
+.scatter { width: 100%; height: auto; display: block; }
+.scatter text { fill: var(--fg-meta); font-family: var(--font-mono); font-size: 10px; }
+.scatter .lbl-pt { fill: var(--fg-emph); font-size: 11px; }
+.scatter .grid-l { stroke: var(--edge); stroke-width: 1; }
+.scatter .axis-l { stroke: var(--edge-strong); stroke-width: 1; }
+.scatter .ring { fill: none; stroke: var(--fg-emph); stroke-width: 1.5; }
+.sbs { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-3); min-width: 0; }
+.sbs > section { min-width: 0; display: grid; gap: var(--space-2); align-content: start; }
+.sbs h4 { margin: 0; display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap; font-size: var(--text-body); color: var(--fg-emph); }
+.sbs .meta { color: var(--fg-meta); font-size: var(--text-meta); overflow-wrap: anywhere; }
+.mig-note { padding: var(--space-3) var(--space-4); color: var(--fg-meta); font-size: var(--text-meta); display: grid; gap: var(--space-2); }
+.mig-note p { margin: 0; }
+.mig-kv { padding: var(--space-3) var(--space-4); }
+.flag-row { display: flex; gap: 4px; flex-wrap: wrap; }
+.sbs > .ev { border-top: 0; padding-top: 0; }
+.sbs .ev-pre { max-height: 260px; }
+.mig-sel > div { min-width: 0; max-width: 100%; }
+.mig-sel .seg { flex-wrap: wrap; max-width: 100%; height: auto; }
+#view-migration .seg { flex-wrap: wrap; max-width: 100%; height: auto; }

@@ -484,3 +484,143 @@ Site layout:
   run.log (through `RedactingFilter`). This covers hosts that echo the key back (mock defect `auth-echo`).
 - `tests/test_secrets.py` plants a fake key and asserts it appears in no written file and no console output.
 - If your component writes files, pass them through `Redactor.scrub` / `write_envelope(..., redactor)`.
+
+---------------------------------------------------------------------------------------------------------------
+
+## 9. Eval (issue 10: `glmkit eval`, `glmkit.eval`)
+
+The migration eval replays a golden set (or SwitchTrace v0 calls) on a baseline and several targets, grades every
+output, and reports per task type whether each candidate is non-inferior to the baseline. Slice 13 builds the FDE
+workbench and the licensed demo sets on top of this section. Quick start on the mock:
+`glmkit eval demo --out eval-demo` prints a ready `glmkit eval run ...` command.
+
+### 9.1 `glmkit eval run`
+
+```text
+glmkit eval run --set SET --baseline PROFILE --targets P1,P2@low,P3@max [--judge PROFILE] [--out results]
+   [--resume RUN_ID | --run-id NAME] [--concurrency 8] [-k N] [--margin 0.05] [--min-items 20] [--seed 0]
+   [--bootstrap 4000] [--budget-usd X] [--prices extra.yaml] [--profiles-dir DIR] [--task-type T]
+   [--max-items N] [--fail-on-inferior]
+```
+
+- A target is an endpoint profile (name or YAML path), optionally `@effort` (`low|high|max|...`), which is sent
+  as `reasoning_effort`. The target label (`profile` or `profile@effort`) is its id in results.
+- Exit codes: 0 done, 1 only with `--fail-on-inferior` and verdict `fail`, 2 bad input (unknown target, bad set,
+  missing key, resume mismatch), 130 interrupted (finished calls are kept; use `--resume`).
+- The run folder `<out>/<run_id>/` holds `result.json`, `calls.jsonl` (one line per finished call: the resume
+  cache), `judge.jsonl` (judge verdict cache), `manifest.json`, `run.log`. `--resume RUN_ID` replays only missing
+  calls and re-derives grading and statistics from the cache; it refuses a different set or target list.
+- Calls run `--concurrency` at a time. A throttled response (HTTP 429, codes 1302/1305/1308-1321) pauses every
+  call to that target until `Retry-After` / backoff, then retries; these are counted in `throttled_retries` and a
+  call that stays throttled has status `throttled` and is left out of scoring. It is never a failure. Any other
+  error status or transport error scores 0 and counts in `call_errors`.
+- `--budget-usd`: once recomputed spend reaches the cap no new call starts; the rest is skipped and the verdict
+  is `incomplete`. Judge calls are not metered against the cap (judge cost is not logged).
+- Calls are non-streaming: latency is total request time (TTFT is not measured).
+
+### 9.2 Golden set format
+
+YAML or JSON (`SET.yaml`), model `glmkit.eval.goldenset.GoldenSet`:
+
+```yaml
+schema_version: 1
+name: banking-demo
+k: 1                         # default replays per item and target (stochastic items: 3)
+params: {max_tokens: 600}    # default request params (top-level canonical keys: temperature, max_tokens ...)
+graders:                     # default grader per task type; '*' = any
+  classify: {type: exact, ignore_case: true}
+  summarize: {type: judge, rubric: "Prefer the summary closest in meaning to the reference."}
+items:
+  - id: classify-001         # unique
+    task_type: classify      # the per-task-type reporting key
+    cluster: ticket-17       # optional: items sharing a cluster are resampled together (default: the item)
+    system: "..."            # optional
+    prompt: "..."            # shorthand for one user message; or messages: [{role, content}, ...]
+    tools: [...]             # optional OpenAI tools
+    params: {}               # per item request params
+    expected: card_lost      # reference: exact / regex / numeric / json_schema(match_expected) / sql / judge
+    grader: {type: exact}    # per-item override
+    k: 3                     # per-item replays
+    critical: true           # regressions on this item are listed separately
+```
+
+`*.jsonl` holds one item per line, either a golden item (as above) or a SwitchTrace v0 call
+(`"schema": "switch-eval.call/0"`): its `request` is replayed, `labels.expected` is the reference, the recorded
+response is the judge's fallback reference, `trace_id` is the cluster and rows with `privacy.content_present:
+false` are skipped. A grader is taken from the item, else `graders[task_type]`, else `graders["*"]`, else `exact`
+(has `expected`) or `judge` (has a recorded response).
+
+### 9.3 Graders (`glmkit.eval.graders`)
+
+`@grader("name")` on `async def fn(ctx: GradeContext) -> Grade` in a module of `glmkit/eval/graders/` (or a plugin).
+`GradeContext`: `item`, `config` (the grader dict), `output` (final text; tool calls render as JSON when there is
+no text), `target`, `baseline_output`, `is_baseline`, `replay`, `judge`. `Grade`: `score` in [0,1], `passed`,
+`detail`, `data`. `glmkit eval graders` lists them.
+
+| type | config | passes when |
+|---|---|---|
+| `exact` | `ignore_case`, `strip_punct`, `expected` (list = any) | normalized output equals expected |
+| `regex` | `pattern` (or item.expected), `flags`, `must_match` | `re.search` hits |
+| `numeric` | `extract` last/first/whole, `abs_tol`, `rel_tol` | extracted number within tolerance |
+| `json_schema` | `schema`, `match_expected` | output (fences stripped) validates; with `match_expected` it also contains item.expected |
+| `sql` | `setup` (DDL/INSERT list), `ordered`, `executor` | candidate SQL and reference SQL (item.expected) return the same rows on a fresh database; `@sql_executor("name")` adds executors |
+| `judge` | `rubric`, `reference` | see below |
+
+**Judge.** Pairwise against the baseline's answer to the same prompt (same replay index), run in both position
+orders. Candidate score: 1 if it wins both orders, 0 if it loses both, 0.5 on a tie or when the orders disagree
+(`position_inconsistent`, flagged on the item). The baseline's own score on judged items is 0.5 by construction,
+so the paired delta on judge items is win rate minus 0.5; judged items are left out of McNemar. The judge is
+blind (answer A / B only), its model family is compared with every target's (`data.judge.family_overlap`
+warns on self-preference), a consistent win by an answer 1.3x longer than the other is flagged `longer_won`,
+and verdicts are cached by (judge model, rubric, content hash). `--judge PROFILE` is required when any item uses it.
+
+### 9.4 Result envelope (`component: "eval"`)
+
+- `items`: one `ItemResult` per (item, target): `id "<item>@<target>"`, `group` = item id, `kind "eval_item"`,
+  `category` = task type, `target`, `status` pass (mean score over replays > 0.5) / fail / throttled / skip
+  (baseline on judged items) / error, `metrics {score, delta_vs_baseline, replays, cost_usd, total_ms,
+  output_tokens}`, `data {task_type, cluster, critical, judged, prompt, expected, replays: [{k, status, output,
+  score, detail, grade, cost_usd, latency_ms, finish_reason, usage, throttled_retries}]}`.
+- `verdict`: `pass` every candidate is non-inferior overall; `fail` some candidate is inferior overall; `warn`
+  otherwise (inconclusive); `incomplete` no candidate or budget exhausted.
+- `data`: `set`, `baseline`, `margin`, `targets`, `target_summary {label: pass_rate (+Wilson), cost_per_1000_usd,
+  cost_per_success_usd, solves_per_100_usd, latency p50/p95, output/reasoning tokens, truncated_share,
+  throttled_retries, call_errors}`, `comparisons` (below), `regressions {candidate: {worst, critical}}`,
+  `cost_quality`, `judge` (audit), `budget`, `run {resumed_calls, new_calls}`, `price_table`, `warnings`, `method`.
+- `comparisons[]`, one per (candidate, task type or `ALL`): `quality` (`n`, `n_clusters`, `mean_baseline`,
+  `mean_candidate`, `delta`, `se_clustered`, `ci` clustered percentile bootstrap, `ci_clt`, `correlation`,
+  `verdict` `non_inferior|inferior|inconclusive`, `margin`, `extra_items_needed`), `mcnemar` (`b_baseline_only`,
+  `c_candidate_only`, exact `p`, `p_holm`), `cost`, `latency`, `output_tokens` (paired: means, medians, `ratio`,
+  bootstrap CIs), `reliability` (pass@K and pass^K when K > 1), `recommendation`.
+
+**Statistics** (`glmkit.eval.stats`, research/03-eval.md section 3). Item score = mean over its K replays; the
+cluster is resampled whole. `delta` = candidate - baseline on the same items. Verdict: `non_inferior` if the CI
+lower bound is above `-margin`, `inferior` if the upper bound is below it, else `inconclusive` with the extra
+items the CLT half-width would need. Fewer than `--min-items` paired items is always inconclusive. Task-type
+intervals are unadjusted; McNemar p-values carry Holm-adjusted `p_holm`.
+
+### 9.5 Prices (`glmkit.eval.pricing`)
+
+Cost is recomputed from a versioned YAML (`src/glmkit/eval/prices.yaml`: USD per 1M tokens, `source_url` and
+`as_of` per entry, optional `provider` for host-specific prices); `--prices extra.yaml` overlays it. Input tokens
+include the cached part (SwitchTrace convention); output includes reasoning. A model without an entry has cost
+`not logged` (null), never zero. The interface is `cost_usd(model, provider, usage) -> float | None` plus
+`version`, so issue 12's table can replace `PriceTable` at merge.
+
+### 9.6 Mock targets with planted quality (`glmkit.mock.defects.eval_quality`)
+
+Per-request mock behaviours, switched on in a profile's `headers` (so one mock server plays the incumbent, a worse
+and an equal candidate): `X-GLMKit-Defects: eval-oracle,degrade-quality` plus `X-GLMKit-Degrade-Rate`,
+`X-GLMKit-Degrade-Salt`. `eval-oracle` answers with the `<mock-answer>...</mock-answer>` text of the prompt;
+`degrade-quality` corrupts it at the given rate (a hash of salt, replay and prompt, so deterministic);
+`mock-judge` answers pairwise judge prompts (optional `X-GLMKit-Judge-Position-Bias`); `rate-limit-burst`
+(`X-GLMKit-Throttle-Every`) returns 429/1302 on every N-th request. The module also registers the mock-only models
+`mock-incumbent-1` and `mock-judge-1`. `glmkit eval demo` writes a golden set and profiles that use them.
+
+### 9.7 Dashboard
+
+The Migration tab (`report/pages/migration.*`) shows the newest eval run: KPI strip (quality delta, cost delta,
+p50 latency delta, verdict) for the selected candidate, the per-task-type table with CI bars against the margin
+and verdict pills, cost vs quality per target and effort level, per-target summary, an item table (worst delta
+first, capped at 60 rows until "Show all") whose drawer shows the outputs of every target side by side, the judge
+audit and run details. Costs are estimates (list price x tokens) and are labelled as such.

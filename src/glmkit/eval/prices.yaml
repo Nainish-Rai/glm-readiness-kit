@@ -1,0 +1,36 @@
+# Versioned price table for the eval engine. Prices are USD per 1M tokens.
+# Rule: cost is recomputed from this table and never trusted from the source alone.
+# Add your incumbent's models (and host-specific prices) with `glmkit eval run --prices my-prices.yaml`;
+# entries of the extra file win over these on the same (provider, model).
+version: "2026-10-26"
+unit: usd_per_1m_tokens
+entries:
+  - model: glm-5.3
+    input: 1.40
+    cached_input: 0.26
+    output: 4.40
+    source_url: https://docs.z.ai/guides/overview/pricing
+    as_of: "2026-10-26"
+    note: list price from research/03-eval.md section 2 (units not re-checked against the live page)
+  - model: glm-5.3-flash
+    input: 0.15
+    cached_input: 0.03
+    output: 0.50
+    source_url: https://docs.z.ai/guides/overview/pricing
+    as_of: "2026-10-26"
+    note: list price from research/03-eval.md section 2 (units not re-checked against the live page)
+  - model: glm-5.3-flashx
+    input: 0.37
+    cached_input: 0.075
+    output: 1.25
+    source_url: https://docs.z.ai/guides/overview/pricing
+    as_of: "2026-10-26"
+    note: list price from research/03-eval.md section 2 (units not re-checked against the live page)
+  - model: glm-5.3
+    provider: mistral
+    input: 1.40
+    cached_input: 0.14
+    output: 4.40
+    source_url: https://docs.mistral.ai/inference/pricing
+    as_of: "2026-10-26"
+    note: regional endpoints cost 1.1x (not modelled); see research/04-deploy-compliance.md
