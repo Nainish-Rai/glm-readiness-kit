@@ -568,3 +568,53 @@ table.effort_factor("max", "high")          # EffortFactor(factor=0.5, heuristic
   cached_input + output x output` (input includes cache, output includes reasoning). Missing price gives `None`.
 - Cost result envelope: `component: "cost"`, `data` = analysis (totals, causes, verbosity, tokenizer, projection),
   one `cost_trace` item per trace with per-turn forensics in `item.data.turns`. The Cost tab reads the newest one.
+---
+
+## 11. Bridge core (`glmkit.bridge.core`, issue 06)
+
+A framework-neutral core: pure functions over JSON bodies and parsed SSE events, no web framework and no HTTP
+client. Hosts drive it: the OpenAI proxy (`glmkit.bridge.proxy`, `glmkit bridge serve`), the Anthropic path
+(issue 07), the LiteLLM plugin (issue 08). Policies (issue 09 guard) plug in through middleware.
+
+```python
+from glmkit.bridge.core import BridgeCore, FixEmitter, get_upstream
+core = BridgeCore(get_upstream("zai"), emitter=FixEmitter(log_content=False, sinks=[recorder.on_event]))
+ctx   = core.new_context(body)                      # per client call: request_id, tool schemas, retry count
+sent  = core.rewrite_request(ctx, body)             # RequestRewriter chain (copy; input is never mutated)
+data, failures = core.rewrite_response(ctx, resp)   # ResponseRewriter: repair tool args, normalise reasoning field
+rw = core.new_stream(ctx)                           # StreamRewriter: rw.feed(chunk_dict | "[DONE]") -> [events]
+cls, client_body = core.classify_error(ctx, status, body_text, headers)   # ErrorClassifier
+plan = core.plan_retry(ctx, sent, assistant_msg, failures)                 # RetryPolicy: at most one per call
+```
+
+| Piece | Where | Notes |
+|---|---|---|
+| `UpstreamProfile` (data) | `core/upstream.py`, `UPSTREAMS` | `zai`, `zai-plan`, `cerebras`, `generic`. `upstream_for_endpoint(provider, class)` picks one from an endpoint profile; `--flavor` overrides. Rewriters read fields, never provider names |
+| Request rewriters | `core/pipeline.py`, `DEFAULT_REQUEST_REWRITERS` | `(ctx, body) -> body`: `rewrite_thinking` (disabled -> enabled + effort low on forced-thinking models), `rewrite_effort` (clamp to low/high/max), `rewrite_tool_schemas` (flatten top-level oneOf/anyOf), `rewrite_reasoning_replay` (verbatim / rename / strip). Add a fix = add a function to the tuple passed as `request_rewriters=` |
+| Response side | `core/toolcalls.py::fix_call`, `core/jsonrepair.py`, `core/schema.py` | Repairs single quotes, trailing commas, fences, double-encoding, truncation; maps flattened-schema args back to one branch; validates against the original schema. Never substitutes `{}` (only when the arguments are empty and the schema accepts `{}`) |
+| `StreamRewriter` | `core/stream.py` | Text/reasoning pass through live and in order. Tool-call deltas are buffered per `index` and emitted once, repaired, before the finish chunk. `rw.needs_retry` / `rw.failures` / `rw.assistant_message`, then `rw.resolve(calls)` or `rw.fail()` |
+| `ErrorClassifier` | `core/errors.py` | Protocol `classify(status, body, headers) -> ClassifiedError`. `TableErrorClassifier` holds the research/02-bridge.md table (1302, 1305, 1308/1316-1318 with `next_flush_time`, 1310, 1313, 1113/1309/1311/1314/1315, 1210, 1261). To be reconciled with issue 03's taxonomy: implement the protocol on top of it and pass `classifier=` |
+| `RetryPolicy` | `core/retry.py` | Protocol `plan_after_tool_failure(request, assistant_message, failures, attempts_so_far) -> RetryPlan | None`. `ParseErrorRetry` (max 1) appends the failed turn plus one `tool` message per failed call with the parse error |
+| Fix events | `core/events.py`, `FIX_TITLES` | `ctx.emit(fix_id, before, after, details=, content=)`. `before`/`after` are short summaries; raw values go to `content` and are dropped unless `FixEmitter(log_content=True)` |
+| Middleware hook | `core/middleware.py` | Subclass `BridgeMiddleware`; methods may be async: `before_request(ctx, body)` (runs after the rewriters; return a body or `Reject(status, message, code, retry_after_s, fix_id)`), `after_response`, `on_stream_event(ctx, event) -> [events] | Reject`, `on_error`, `on_finish(ctx, usage)` for spend accounting. Pass `middleware=[...]` to `BridgeCore` / `ProxyConfig`. Per-call state: `ctx.extras` |
+
+**Fix ids**: `thinking-disabled-to-low`, `effort-clamp`, `schema-flatten`, `schema-args-unflatten`,
+`tool-args-repair`, `tool-args-retry`, `tool-args-unrepaired` (failed), `tool-args-schema-mismatch`,
+`reasoning-replay`, `reasoning-normalize`, `error-classify`, `error-sanitize`.
+
+**Proxy** (`glmkit bridge serve --upstream mock --mock-defect bridge-broken-json-args [--flavor ...] [--log-content]`):
+`POST .../chat/completions`, `GET /healthz`, `GET /_bridge/info`; `create_app(ProxyConfig, extra_routes=[...])` lets
+issue 07 add `/v1/messages`. Errors carry the mapped status, `Retry-After` and `x-should-retry` (the OpenAI SDK
+honours both). Responses carry `x-glmkit-bridge-request-id` and `x-glmkit-bridge-fixes`. The upstream key comes from
+the profile's env var, otherwise the caller's credentials are forwarded; auth headers are never logged or recorded.
+No message content is logged or written unless `--log-content`.
+
+**Session result**: `<out>/<run_id>/result.json`, `component: "bridge"`, one `ItemResult` (`kind: "fix_event"`,
+`group` = fix id, `data` = the event) per fix, `data.requests` = per-request records. Rewritten about once a second
+and at shutdown. The **Bridge** dashboard tab (`report/pages/bridge.py|js`) reads it.
+
+**Mock defects** (prefixed `bridge-` to avoid registry collisions): `bridge-oneof-empty-args`,
+`bridge-broken-json-args`, `bridge-unrepairable-args`, `bridge-reasoning-reject`. Forced thinking and effort
+errors need no defect: the mock's default behaviour on the `api` class already rejects them.
+
+**Proof**: `uv run python tools/bridge-proof/proof.py --out results/bridge-demo` (OpenAI SDK loop, direct vs bridged).
