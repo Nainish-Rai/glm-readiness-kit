@@ -1,17 +1,19 @@
 """Error classifier: Z.ai business codes -> HTTP status, retryability and ``Retry-After``.
 
-The table is the proposal in research/02-bridge.md section 5 (semantics are an inference from Z.ai's code table
-and are verified in issue 16). Issue 03 builds a Z.ai taxonomy module in parallel; it can be plugged in by
-implementing the ``ErrorClassifier`` protocol and passing it to ``BridgeCore(classifier=...)``.
+There is no code table here: the one canonical table is ``glmkit.zai_errors`` (issue 19). This module adapts its
+``classify()`` to the bridge's ``ClassifiedError`` and keeps the ``ErrorClassifier`` protocol so callers can still
+pass their own via ``BridgeCore(classifier=...)``.
 """
 
 from __future__ import annotations
 
 import json
-import re
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import Any, Protocol, runtime_checkable
+
+from glmkit.zai_errors import DEFAULT_RETRY_AFTER_S, flush_seconds
+from glmkit.zai_errors import classify as zai_classify
 
 
 @dataclass
@@ -33,31 +35,22 @@ class ErrorClassifier(Protocol):
     def classify(self, status: int, body: Any, headers: dict[str, str] | None = None) -> ClassifiedError: ...
 
 
-# code -> (client status, kind, retryable, default retry-after seconds, error.type)
-CODE_TABLE: dict[str, tuple[int, str, bool, int | None, str]] = {
-    "1302": (429, "rate_limit", True, 2, "rate_limit_error"),
-    "1305": (503, "overloaded", True, 10, "overloaded_error"),
-    "1308": (429, "quota", True, 300, "rate_limit_error"),
-    "1316": (429, "quota", True, 300, "rate_limit_error"),
-    "1317": (429, "quota", True, 300, "rate_limit_error"),
-    "1318": (429, "quota", True, 300, "rate_limit_error"),
-    "1310": (429, "quota", False, None, "rate_limit_error"),
-    "1313": (429, "rate_limit", False, None, "rate_limit_error"),
-    "1113": (402, "billing", False, None, "billing_error"),
-    "1309": (402, "billing", False, None, "billing_error"),
-    "1311": (402, "billing", False, None, "billing_error"),
-    "1314": (402, "billing", False, None, "billing_error"),
-    "1315": (402, "billing", False, None, "billing_error"),
-    "1210": (400, "invalid_request", False, None, "invalid_request_error"),
-    "1211": (404, "invalid_request", False, None, "not_found_error"),
-    "1213": (400, "invalid_request", False, None, "invalid_request_error"),
-    "1214": (400, "invalid_request", False, None, "invalid_request_error"),
-    "1261": (400, "too_long", False, None, "invalid_request_error"),
-    "1000": (401, "auth", False, None, "authentication_error"),
-    "1001": (401, "auth", False, None, "authentication_error"),
-}
-_FLUSH = re.compile(r"next[_ ]flush[_ ]time\D{0,6}(\d{10,13}|\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(?::\d{2})?)")
 MAX_RETRY_AFTER = 24 * 3600
+
+#: canonical category (glmkit.zai_errors.CATEGORIES) -> OpenAI/Anthropic style ``error.type``. Not a code table.
+ERROR_TYPE: dict[str, str] = {
+    "auth": "authentication_error",
+    "billing": "billing_error",
+    "permission": "permission_error",
+    "usage_limit": "rate_limit_error",
+    "rate_limit": "rate_limit_error",
+    "overloaded": "overloaded_error",
+    "invalid_request": "invalid_request_error",
+    "context_length": "invalid_request_error",
+    "content_safety": "invalid_request_error",
+    "not_found": "not_found_error",
+    "server": "api_error",
+}
 
 
 def error_code(body: Any) -> str | None:
@@ -77,21 +70,9 @@ def error_message(body: Any) -> str:
 
 
 def seconds_until_flush(message: str, now: datetime | None = None) -> int | None:
-    """Parse ``next_flush_time`` (epoch s/ms or ``YYYY-MM-DD HH:MM[:SS]``, UTC assumed) out of a message."""
-    m = _FLUSH.search(message)
-    if not m:
-        return None
-    now = now or datetime.now(UTC)
-    raw = m.group(1)
-    try:
-        if raw.isdigit():
-            ts = int(raw) / (1000 if len(raw) == 13 else 1)
-            target = datetime.fromtimestamp(ts, UTC)
-        else:
-            target = datetime.fromisoformat(raw.replace(" ", "T")).replace(tzinfo=UTC)
-    except ValueError:
-        return None
-    return max(1, min(MAX_RETRY_AFTER, int((target - now).total_seconds())))
+    """Seconds until the ``next_flush_time`` in a message (parsed by glmkit.zai_errors), clamped to 1..24h."""
+    secs = flush_seconds(message, now)
+    return None if secs is None else max(1, min(MAX_RETRY_AFTER, int(secs)))
 
 
 class TableErrorClassifier:
@@ -101,12 +82,21 @@ class TableErrorClassifier:
         headers = {k.lower(): v for k, v in (headers or {}).items()}
         code = error_code(body)
         msg = error_message(body)
-        if code in CODE_TABLE:
-            st, kind, retryable, default_ra, etype = CODE_TABLE[code]
+        info = zai_classify(code, http_status=status, message=msg, headers=headers)
+        if info.known and code is not None:
+            st = info.suggested_http
             ra = None
-            if retryable:
-                ra = seconds_until_flush(msg) or _header_int(headers.get("retry-after")) or default_ra
-            return ClassifiedError(st, status, code, kind, retryable, ra, etype, msg, changed=st != status)
+            if info.retryable:
+                hint = info.retry_after_s
+                ra = (
+                    max(1, min(MAX_RETRY_AFTER, int(hint)))
+                    if hint is not None
+                    else DEFAULT_RETRY_AFTER_S.get(info.category)
+                )
+            etype = ERROR_TYPE[info.category]
+            return ClassifiedError(
+                st, status, info.code, info.category, info.retryable, ra, etype, msg, changed=st != status
+            )
         if not isinstance(body, dict) or ("error" not in body and "code" not in body):
             # no JSON error object: an HTML page or a stack trace. Never pass internals to the client.
             st = 502 if status >= 500 else status

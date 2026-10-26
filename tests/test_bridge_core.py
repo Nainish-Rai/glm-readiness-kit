@@ -301,10 +301,14 @@ def test_fix_events_carry_no_content_unless_enabled() -> None:
         ("1302", 429, 429, True),
         ("1305", 429, 503, True),
         ("1308", 429, 429, True),
-        ("1310", 429, 429, False),
-        ("1313", 429, 429, False),
+        ("1310", 429, 429, True),  # issue 19: usage window, resets later (was non-retryable in the bridge table)
+        ("1313", 429, 429, True),  # issue 19: Fair Usage Policy limiting clears (was non-retryable)
+        ("1321", 429, 429, True),
         ("1113", 429, 402, False),
         ("1309", 429, 402, False),
+        ("1311", 429, 403, False),  # issue 19: plan lacks model access is permission/403 (was billing/402)
+        ("1315", 429, 403, False),
+        ("1211", 400, 404, False),
         ("1210", 400, 400, False),
     ],
 )
@@ -312,6 +316,11 @@ def test_error_table(code: str, status: int, want: int, retryable: bool) -> None
     cls = TableErrorClassifier().classify(status, {"error": {"code": code, "message": "x"}})
     assert (cls.status, cls.retryable) == (want, retryable)
     assert (cls.retry_after_s is not None) == retryable
+
+
+def test_server_codes_retry_without_default_retry_after() -> None:
+    cls = TableErrorClassifier().classify(500, {"error": {"code": "1234", "message": "x"}})
+    assert (cls.status, cls.retryable, cls.retry_after_s, cls.changed) == (502, True, None, True)
 
 
 def test_next_flush_time_and_unknown_codes() -> None:
