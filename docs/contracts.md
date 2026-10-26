@@ -544,7 +544,10 @@ tests/test_traces.py`) and a row in `CASES` in `tests/test_traces.py`; a test fa
 ## 10. Price table (`glmkit.cost.prices`, owned by issue 12)
 
 One versioned YAML, `src/glmkit/cost/prices.yaml` (override: `$GLMKIT_PRICES` or `load_price_table(path)`). Issues 09
-(guard) and 10 (eval) read prices only through this API and never keep their own.
+(guard), 10 (eval) and 14 (deploy) read model/API prices only through this API and never keep their own (issue 18);
+`tests/test_cost.py` fails if a second data file with model prices appears in the package. GPU prices and throughput
+calibration stay in `deploy/data/catalog.json` (they are not model API prices); its `api_hosts` map only names which
+table host each calculator API choice uses.
 
 ```python
 from glmkit.cost.prices import load_price_table, price_for
@@ -559,6 +562,11 @@ table.coding_plan.off_peak_multiplier.value # 0.5 (published); reported_peak_mul
 table.effort_factor("max", "high")          # EffortFactor(factor=0.5, heuristic=True) | None
 ```
 
+- Extra optional entry fields (additive): `title` (UI label), `secondary` (aggregator page, not the vendor), `mock`
+  (mock-server stand-in such as `mock-incumbent-1`: illustrative, excluded from `models()`, flagged MOCK in tabs).
+- `table.cost_usd(model, provider, usage)` prices one call for the eval engine (`input_tokens_total` includes the cached
+  part). `provider` is a host (`zai` = `zai-api`); a host without an entry for the model falls back to the Z.ai list
+  price, a host entry with no price (Bedrock) gives `None`. `table.with_overlay(*paths)` layers user `prices:` files.
 - Loading fails (pydantic `ValidationError`) for any entry without a `source` URL or a `retrieved` date;
   `tests/test_cost.py` pins this.
 - Coding Plan: tier prices, 5-hour and weekly credit caps, the peak window and the 50% off-peak rate are
@@ -781,11 +789,12 @@ intervals are unadjusted; McNemar p-values carry Holm-adjusted `p_holm`.
 
 ### 9.5 Prices (`glmkit.eval.pricing`)
 
-Cost is recomputed from a versioned YAML (`src/glmkit/eval/prices.yaml`: USD per 1M tokens, `source_url` and
-`as_of` per entry, optional `provider` for host-specific prices); `--prices extra.yaml` overlays it. Input tokens
-include the cached part (SwitchTrace convention); output includes reasoning. A model without an entry has cost
-`not logged` (null), never zero. The interface is `cost_usd(model, provider, usage) -> float | None` plus
-`version`, so issue 12's table can replace `PriceTable` at merge.
+Cost is recomputed from the one price table (section 10, `glmkit.cost.prices`; the eval engine keeps no price file).
+`glmkit.eval.pricing.PriceTable` is a thin view: `cost_usd(model, provider, usage) -> float | None`, `version`, and
+`describe()`; `--prices extra.yaml` layers a `prices:` list in the canonical entry format (`host`, `model`, `input`,
+`cached_input`, `output`, `source`, `retrieved`) over it. Input tokens include the cached part (SwitchTrace
+convention); output includes reasoning. A model without a price has cost `not logged` (null), never zero. The mock
+incumbent's illustrative price is a `mock: true` entry in the same table.
 
 ### 9.6 Mock targets with planted quality (`glmkit.mock.defects.eval_quality`)
 

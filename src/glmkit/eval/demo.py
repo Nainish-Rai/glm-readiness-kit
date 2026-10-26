@@ -2,7 +2,7 @@
 answer quality is *planted* (see ``glmkit.mock.defects.eval_quality``). Real engagements bring their own golden set
 (issue 13 builds the licensed demo sets); this one exists to prove the engine and to render the Migration tab.
 
-``glmkit eval demo --out DIR`` writes ``DIR/demo-set.yaml``, ``DIR/prices.yaml`` and ``DIR/profiles/*.yaml``.
+``glmkit eval demo --out DIR`` writes ``DIR/demo-set.yaml`` and ``DIR/profiles/*.yaml``.
 """
 
 from __future__ import annotations
@@ -40,20 +40,6 @@ TARGETS = {
     "demo-glm-equal": ("glm-5.3-flash", 0.03, "equal", "GLM-5.3 Flash, planted equal to the incumbent (3%)"),
     "demo-glm-worse": ("glm-5.3-flashx", 0.25, "worse", "GLM-5.3 FlashX, planted worse (25% errors)"),
     "demo-glm": ("glm-5.3", 0.03, "glm", "GLM-5.3 for the effort sweep (low/high/max), planted equal (3%)"),
-}
-DEMO_PRICES = {
-    "version": "demo-2026-10-26",
-    "entries": [
-        {
-            "model": "mock-incumbent-1",
-            "input": 3.0,
-            "cached_input": 0.3,
-            "output": 15.0,
-            "source_url": "https://example.invalid/illustrative-mock-price",
-            "as_of": "2026-10-26",
-            "note": "ILLUSTRATIVE price for the mock incumbent, not a real vendor price",
-        }
-    ],
 }
 
 
@@ -181,8 +167,6 @@ def write_demo(out: Path, n_scale: int = 1, seed: int = 7) -> dict[str, Path]:
     (out / "profiles").mkdir(exist_ok=True)
     set_path = out / "demo-set.yaml"
     set_path.write_text(yaml.safe_dump(build_set(n_scale, seed), sort_keys=False, allow_unicode=True), encoding="utf-8")
-    prices = out / "prices.yaml"
-    prices.write_text(yaml.safe_dump(DEMO_PRICES, sort_keys=False), encoding="utf-8")
     for name, prof in build_profiles().items():
         (out / "profiles" / f"{name}.yaml").write_text(yaml.safe_dump(prof, sort_keys=False), encoding="utf-8")
-    return {"set": set_path, "prices": prices, "profiles": out / "profiles"}
+    return {"set": set_path, "profiles": out / "profiles"}

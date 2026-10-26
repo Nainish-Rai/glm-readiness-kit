@@ -35,7 +35,31 @@ def _data(name: str) -> Any:
 
 
 def load_catalog() -> dict[str, Any]:
-    return _data("catalog.json")
+    """Deploy catalog: GPU prices, calibration and sizing data from ``catalog.json``; the API prices of the
+    comparison come from the one price table (``glmkit.cost.prices``) and are shaped as ``cat["apis"]``."""
+    from glmkit.cost.prices import load_price_table
+
+    cat = _data("catalog.json")
+    table = load_price_table()
+    apis: dict[str, Any] = {}
+    for name, host in cat.pop("api_hosts").items():
+        if name.startswith("_"):
+            continue
+        e = table.lookup(cat["model"]["id"], host)
+        if e is None or e.input is None or e.output is None:
+            raise SizingError(f"price table has no complete {cat['model']['id']} price for host {host!r}")
+        src: dict[str, Any] = {"url": e.source, "date": e.retrieved.isoformat()}
+        if e.secondary:
+            src["secondary"] = True
+        apis[name] = {
+            "title": e.title or host,
+            "in_usd_m": e.input,
+            "cached_usd_m": e.cached_input,
+            "out_usd_m": e.output,
+            "source": src,
+        }
+    cat["apis"] = apis
+    return cat
 
 
 def load_config() -> dict[str, Any]:

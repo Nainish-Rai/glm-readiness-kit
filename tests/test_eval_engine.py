@@ -35,7 +35,6 @@ def opts(demo, out: Path, **kw) -> EvalOptions:
         "set_path": demo["set"],
         "targets": ["demo-glm-equal", "demo-glm-worse"],
         "baseline": BASE,
-        "prices": [demo["prices"]],
         "out_dir": out,
         "seed": 7,
         "n_boot": 1000,
@@ -195,9 +194,16 @@ async def test_budget_cap_stops_new_calls(demo, tmp_path) -> None:
     assert env.verdict == "incomplete"
 
 
-async def test_unpriced_model_is_not_logged_never_zero(demo, tmp_path) -> None:
-    o = opts(demo, tmp_path, prices=[], task_types=["classify"], max_items=25, targets=["demo-glm-equal"])
-    env = (await run_eval(o)).envelope  # the incumbent mock model has no price without the demo table
+async def test_unpriced_model_is_not_logged_never_zero(demo, tmp_path, monkeypatch) -> None:
+    from glmkit.cost.prices import SHIPPED
+
+    raw = yaml.safe_load(SHIPPED.read_text())
+    raw["prices"] = [e for e in raw["prices"] if not e.get("mock")]  # a table that does not list the mock incumbent
+    table = tmp_path / "no-mock.yaml"
+    table.write_text(yaml.safe_dump(raw))
+    monkeypatch.setenv("GLMKIT_PRICES", str(table))
+    o = opts(demo, tmp_path, task_types=["classify"], max_items=25, targets=["demo-glm-equal"])
+    env = (await run_eval(o)).envelope
     assert env.data["target_summary"][BASE]["cost_per_1000_usd"] is None
     assert row(env, "demo-glm-equal")["cost"] is None
     assert any("no price entry" in w for w in env.data["warnings"])
@@ -212,18 +218,30 @@ def test_price_table_cost_and_provenance(tmp_path) -> None:
     assert t.cost_usd("unknown-model", None, usage) is None
     for e in t.describe()["entries"]:
         assert e["source_url"].startswith("https://") and e["as_of"]
+    assert t.cost_usd("glm-5.3", "bedrock", usage) is None  # host listed, price not logged: never another host's
+    assert t.cost_usd("glm-5.3-flash", "mock", usage) is not None  # mock targets standing in for GLM use list price
+    mock = [e for e in t.describe()["entries"] if e["mock"]]
+    assert [e["model"] for e in mock] == ["mock-incumbent-1"]
     extra = tmp_path / "p.yaml"
     extra.write_text(
         yaml.safe_dump(
             {
                 "version": "x",
-                "entries": [
-                    {"model": "inc", "input": 1, "output": 2, "source_url": "https://e", "as_of": "2026-01-01"}
+                "prices": [
+                    {
+                        "host": "zai-api",
+                        "model": "inc",
+                        "input": 1,
+                        "output": 2,
+                        "source": "https://e",
+                        "retrieved": "2026-01-01",
+                    }
                 ],
             }
         )
     )
     assert PriceTable.load(extra).cost_usd("inc", None, {"input_tokens_total": 1_000_000}) == 1.0
+    assert PriceTable.load(extra).version.endswith("+x")
 
 
 async def test_switchtrace_jsonl_becomes_replayable_items(demo, tmp_path) -> None:
@@ -273,8 +291,6 @@ def test_cli_run_and_demo(demo, tmp_path) -> None:
             BASE,
             "--targets",
             "demo-glm-equal,demo-glm@low",
-            "--prices",
-            str(demo["prices"]),
             "--task-type",
             "classify",
             "--max-items",

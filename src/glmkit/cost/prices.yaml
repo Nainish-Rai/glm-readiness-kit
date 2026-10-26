@@ -9,7 +9,7 @@ updated: 2026-10-26
 
 prices:
   # --- Z.ai pay-as-you-go list prices (docs.z.ai pricing page) --------------------------------------------
-  - {host: zai-api, model: glm-5.3, input: 1.4, cached_input: 0.26, output: 4.4,
+  - {host: zai-api, model: glm-5.3, title: "Z.ai API list", input: 1.4, cached_input: 0.26, output: 4.4,
      source: "https://docs.z.ai/guides/overview/pricing.md", retrieved: 2026-10-26}
   - {host: zai-api, model: glm-5.3-flash, input: 0.15, cached_input: 0.03, output: 0.50,
      source: "https://docs.z.ai/guides/overview/pricing.md", retrieved: 2026-10-26}
@@ -38,6 +38,26 @@ prices:
   - {host: bedrock, model: glm-5.3, input: null, cached_input: null, output: null,
      source: "https://aws.amazon.com/about-aws/whats-new/2026/10/amazon-bedrock-glm-5-3/", retrieved: 2026-10-26,
      note: "price not logged; look it up on the Bedrock pricing page for the region"}
+  # --- Hosts the deploy calculator compares against (moved here from deploy/data/catalog.json, issue 18) ---
+  # `title` is the label the Deploy tab shows; `secondary: true` = an aggregator or calculator page, not the vendor.
+  - {host: mistral, model: glm-5.3, title: "Mistral La Plateforme", input: 1.4, cached_input: 0.14, output: 4.4,
+     source: "https://docs.mistral.ai/inference/pricing", retrieved: 2026-10-26}
+  - {host: mistral-eu, model: glm-5.3, title: "Mistral EU regional (1.1x)", input: 1.54, cached_input: 0.154, output: 4.84,
+     source: "https://docs.mistral.ai/inference/regional-inference", retrieved: 2026-10-26}
+  - {host: bedrock-global, model: glm-5.3, title: "Bedrock global profile", input: 1.68, cached_input: 0.31, output: 5.28,
+     source: "https://custom.typingmind.com/tools/estimate-llm-usage-costs/amazon-bedrock/us-zai-glm-5-3",
+     retrieved: 2026-10-26, secondary: true,
+     note: "calculator page, not AWS; the plain `bedrock` host above stays not logged until AWS's page is read"}
+  - {host: crusoe, model: glm-5.3, title: "Crusoe managed inference", input: 1.4, cached_input: 0.26, output: 4.4,
+     source: "https://crusoe.ai/cloud/pricing", retrieved: 2026-10-26, secondary: true}
+  - {host: scaleway, model: glm-5.3, title: "Scaleway Generative APIs", input: 2.01, cached_input: null, output: 6.15,
+     source: "https://computeprices.com", retrieved: 2026-10-14, secondary: true,
+     note: "aggregator; cached-input price not logged"}
+  # --- Mock-only models (the mock server's stand-ins). ILLUSTRATIVE, never real vendor prices: `mock: true`
+  # keeps them out of models(), the Cost projection and every "real price" listing. Used by `glmkit eval demo`.
+  - {host: mock, model: mock-incumbent-1, mock: true, input: 3.0, cached_input: 0.3, output: 15.0,
+     source: "https://example.invalid/illustrative-mock-price", retrieved: 2026-10-26,
+     note: "ILLUSTRATIVE price for the mock incumbent, not a real vendor price"}
 
 # --- GLM Coding Plan (credits / points model) ---------------------------------------------------------------
 # Published: tier prices, 5-hour and weekly credit caps, the peak window and the 50% off-peak rate.

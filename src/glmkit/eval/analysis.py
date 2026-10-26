@@ -416,7 +416,7 @@ def analyse(
                 "calls_skipped": budget_skipped,
             },
             "run": {"resumed_calls": resumed_calls, "new_calls": new_calls, "calls_total": len(cache)},
-            "price_table": prices.describe(),
+            "price_table": prices.describe([(s.profile.model, s.profile.provider) for s in specs]),
             "warnings": warnings,
             "method": {
                 "unit": "item; score = mean over K replays; cluster = item.cluster or item id",
