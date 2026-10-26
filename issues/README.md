@@ -10,7 +10,7 @@ Statuses: `ready` → `in-progress` → `review` → `done` (or `blocked`). Labe
 | 03 | [Conformance: wire, errors, Anthropic endpoint](03-conform-wire-anthropic.md) | AFK | 01 | in-progress |
 | 04 | [Conformance: thinking, streaming, cache, language](04-conform-thinking-stream.md) | AFK | 01 | in-progress |
 | 05 | [Conformance: latency + downgrade fingerprinting](05-conform-latency-fingerprint.md) | AFK | 01 | in-progress |
-| 06 | [Bridge core + OpenAI-compatible proxy](06-bridge-core-openai.md) | AFK | 01 | in-progress |
+| 06 | [Bridge core + OpenAI-compatible proxy](06-bridge-core-openai.md) | AFK | 01 | done |
 | 07 | [Bridge: Anthropic Messages path](07-bridge-anthropic.md) | AFK | 06 | blocked |
 | 08 | [Bridge: LiteLLM plugin adapter](08-bridge-litellm.md) | AFK | 06 | blocked |
 | 09 | [Spend and loop guard](09-guard.md) | AFK | 06 | blocked |
