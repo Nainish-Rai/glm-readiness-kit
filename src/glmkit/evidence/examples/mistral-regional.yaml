@@ -1,0 +1,26 @@
+# Example only: fictional customer. GLM-5.3 on Mistral's EU regional endpoint.
+schema_version: 1
+name: acme-mistral-eu
+description: Customer-support summarisation through Mistral's EU endpoint (api.eu.mistral.ai).
+path: mistral-regional
+jurisdictions: [EU, SG, US]
+hosting:
+  provider: Mistral AI
+  region: EU and EFTA data centres
+  jurisdiction: EU
+  endpoint: https://api.eu.mistral.ai
+  mistral_endpoint: eu
+  glm_on_endpoint_verified: false   # models.list against api.eu.mistral.ai not yet run
+data_flow:
+  clients: [Support desk application]
+  telemetry_to_zai: null
+personal_data:
+  categories: [customer names, support ticket text]
+  special_category: false
+  data_subjects: [customers]
+retention:
+  prompts_days: 0
+  logs_days: 90
+  provider_retention: see Mistral DPA
+sub_processors:
+  - {name: Mistral AI, role: model host and control plane, location: EU (control plane not regional), outside_eea: null}

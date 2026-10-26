@@ -1,0 +1,45 @@
+# Example only: fictional customer. Self-hosted GLM-5.3 on a rented EU GPU node.
+schema_version: 1
+name: acme-self-hosted-eu
+description: Internal coding assistant, GLM-5.3 FP8 on one 8xH200 node in Finland, vLLM.
+path: self-hosted
+jurisdictions: [EU, SG, US]
+hosting:
+  provider: Nebius (GPU cloud, example)
+  region: Finland
+  jurisdiction: EU
+serving:
+  engine: vLLM
+  engine_version: 0.28.0
+  image_digest: sha256:0000000000000000000000000000000000000000000000000000000000000001
+  gpu_vendor: NVIDIA
+  hardware: 8x H200
+  tokenizer_template_sha256: "1111111111111111111111111111111111111111111111111111111111111111"
+weights:
+  source_url: https://huggingface.co/zai-org/GLM-5.3
+  sha256: "2222222222222222222222222222222222222222222222222222222222222222"
+  outbound_telemetry: false
+data_flow:
+  clients: [Internal IDE plugins, CI review bot]
+  telemetry_to_zai: false
+personal_data:
+  categories: [developer names in source comments]
+  special_category: false
+  data_subjects: [employees]
+retention:
+  prompts_days: 0
+  logs_days: 30
+sub_processors:
+  - {name: Nebius, role: GPU infrastructure, location: Finland, outside_eea: false}
+fine_tuning:
+  performed: true
+  tokens: 2000000000
+  gpu_hours: 640
+  dataset_provenance: Internal repositories, license-checked
+operator:
+  maas_over_10b_revenue: false
+attestations:
+  EU-B1:
+    status: met
+    evidence_ref: hr/ai-literacy-training-2026-q3.pdf
+    note: Training delivered to all engineers.

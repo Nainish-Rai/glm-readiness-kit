@@ -1,0 +1,26 @@
+# Example only: fictional customer. Z.ai first-party API (pay-as-you-go).
+schema_version: 1
+name: acme-zai-api
+description: Prototype agent calling the Z.ai API (https://api.z.ai/api/paas/v4).
+path: zai-api
+jurisdictions: [EU, SG, US]
+hosting:
+  provider: Z.ai (Zhipu AI)
+  region: Singapore (processing, per Z.ai DPA as reported; not verified here)
+  jurisdiction: SG
+  endpoint: https://api.z.ai/api/paas/v4
+requirements:
+  eu_data_residency: true
+  sg_processing: true
+data_flow:
+  clients: [Prototype agent]
+  telemetry_to_zai: true
+personal_data:
+  categories: [prompt text may contain user names]
+  special_category: false
+  data_subjects: [prototype testers]
+retention:
+  logs_days: 7
+  provider_retention: see Z.ai DPA
+sub_processors:
+  - {name: Z.ai (Zhipu AI), role: model operator, location: Singapore processing; group IP owner Entity-Listed (US), outside_eea: true}
