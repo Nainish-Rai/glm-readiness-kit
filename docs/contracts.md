@@ -484,3 +484,59 @@ Site layout:
   run.log (through `RedactingFilter`). This covers hosts that echo the key back (mock defect `auth-echo`).
 - `tests/test_secrets.py` plants a fake key and asserts it appears in no written file and no console output.
 - If your component writes files, pass them through `Redactor.scrub` / `write_envelope(..., redactor)`.
+
+---------------------------------------------------------------------------------------------------------------
+
+## 9. Trace importers (`glmkit.traces`, issue 11)
+
+`glmkit traces import --from <kind> <path> -o traces.jsonl [--redact] [--redact-pattern REGEX]
+[--task-map map.yaml] [--results results/] [--name LABEL]` converts a production export into SwitchTrace v0 lines.
+`glmkit traces sources` lists the kinds and `glmkit traces stats traces.jsonl... [--json]` prints counts by source and
+task type, replayable vs baseline-only, and token totals. The import also writes a `component: "traces"` result
+envelope (data: `set`, `source`, `output`, `stats`, `skipped`, `redactions`) plus a copy of the JSONL as a `traces`
+artifact. That envelope feeds the **Traces** tab.
+
+| Kind | Input | Notes |
+|---|---|---|
+| `otel` | JSONL of spans, or OTLP/JSON `resourceSpans` | semconv-genai commit `20259355b963...`; content is opt-in, spans without it are baseline-only |
+| `langfuse` | observations as JSONL, JSON or CSV | `GENERATION` rows only. Column names are assumed (not verified against a real export) |
+| `openai` | `{request, response}` JSONL, or bare chat completions | `prompt_tokens` already includes cache |
+| `anthropic` | `{request, response}` JSONL, or bare Messages responses | `input_tokens` excludes cache and is converted; repeated response ids are dropped |
+| `litellm` | spend-log rows as JSONL, JSON or CSV | `spend` becomes `cost_usd_reported`; rows with `{}` messages are baseline-only |
+| `claude_code` | session JSONL (a file, or a folder of them) | lines merged by `message.id`; `isSidechain` gets `labels.tags: ["subagent"]`; unknown line types are skipped and counted |
+
+**Replayable** means `privacy.content_present` and at least one request message. Everything else is
+**baseline-only**: it can contribute cost, latency and verbosity but cannot be replayed.
+
+**Task type** comes from, in order: a metadata key (`task_type` or `task`), the mapping file, a model regex in the
+mapping file, the first source tag, then `unlabelled`. Mapping file (YAML or JSON):
+`{metadata_keys: [...], tags: {tag: type}, models: {regex: type}, use_first_tag: true, default: unlabelled}`.
+
+**Redaction** (`--redact`) replaces emails, phone numbers and API-key-like strings (`sk-...`, `sk-ant-...`, `ghp_...`,
+AWS/Google/Slack keys, JWTs, `Bearer ...`, `api_key=...`) with `[REDACTED:<kind>]`, plus any `--redact-pattern`. It
+covers every string in the trace except `call_id`, `trace_id`, `parent_call_id`, `ts_start` and `source`, and sets
+`privacy.redacted`. It is pattern based: review a sample before sharing a set.
+
+**Contract addition.** `labels.tags: list[str]` (optional, default `[]`) on SwitchTrace v0; schema re-exported.
+
+**Adding a source = one file.** Create `src/glmkit/traces/adapters/<kind>.py` (or a `GLMKIT_PLUGINS` module):
+
+```python
+from glmkit.traces.registry import Adapter, ImportContext, read_records, register_adapter
+
+@register_adapter
+class MyAdapter(Adapter):
+    kind = "mysource"                 # must be a SwitchTrace source.kind literal; adding one is an optional-field change
+    version = "0.1"; title = "My source"; formats = "jsonl"
+
+    def parse(self, ctx: ImportContext):          # yield SwitchTrace; never raise on a bad row
+        for row_no, row in read_records(ctx):     # JSONL / JSON / CSV; bad lines are counted, not fatal
+            if "id" not in row:
+                ctx.skip("row without id"); continue
+            yield SwitchTrace(..., task_type=ctx.task_type(tags=[...], meta={...}, model=...),
+                              source=TraceSource(kind="mysource", ref=ctx.ref(row_no), adapter_version=self.version))
+```
+
+`glmkit.traces.common` has the usage converters (`openai_usage`, `anthropic_usage`), message and tool converters, and
+`parse_ts`. Add a fixture under `tests/fixtures/traces/`, a golden file (`GLMKIT_UPDATE_GOLDEN=1 uv run pytest
+tests/test_traces.py`) and a row in `CASES` in `tests/test_traces.py`; a test fails for any adapter without one.

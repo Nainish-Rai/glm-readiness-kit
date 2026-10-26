@@ -83,6 +83,14 @@
           "default": null,
           "title": "Human Score"
         },
+        "tags": {
+          "description": "Optional free tags, e.g. 'subagent' (importers)",
+          "items": {
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "array"
+        },
         "user_feedback": {
           "default": null,
           "title": "User Feedback"

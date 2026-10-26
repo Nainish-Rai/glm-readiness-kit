@@ -95,6 +95,7 @@ class TraceLabels(_Open):
     checks: list[Any] = Field(default_factory=list)
     human_score: float | None = None
     user_feedback: Any = None
+    tags: list[str] = Field(default_factory=list, description="Optional free tags, e.g. 'subagent' (importers)")
 
 
 class TracePrivacy(_Open):

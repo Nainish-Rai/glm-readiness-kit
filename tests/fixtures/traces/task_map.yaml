@@ -1,0 +1,9 @@
+metadata_keys: [task_type, task]
+tags:
+  triage: classification
+  chitchat: chat
+  extraction: extraction
+  rag: retrieval-qa
+  subagent: subagent-exploration
+models:
+  "^claude-haiku": small-model-work

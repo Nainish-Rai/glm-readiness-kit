@@ -1,0 +1,2 @@
+id,traceId,type,startTime,endTime,model,input,output,usageDetails,costDetails,tags,metadata
+g9,lf-t9,GENERATION,2026-10-03T08:00:00Z,2026-10-03T08:00:02Z,gpt-4o-mini,"[{""role"":""user"",""content"":""Hi""}]","{""role"":""assistant"",""content"":""Hello""}","{""input"":15,""output"":3,""total"":18}","{""total"":0.00002}","[""chitchat""]",{}
