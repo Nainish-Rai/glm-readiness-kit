@@ -12,7 +12,7 @@ server can play the incumbent, a worse candidate and an equal candidate at the s
 * ``mock-judge``       answers a pairwise judge prompt (``### Answer A`` / ``### Answer B``) with a JSON verdict:
                        the answer closer to the reference wins. ``X-GLMKit-Judge-Position-Bias: p`` makes the
                        judge pick "A" with probability p regardless (the planted position bias).
-* ``rate-limit-burst`` every ``X-GLMKit-Throttle-Every``-th request returns 429 / 1302 with ``Retry-After: 0``.
+* ``eval-throttle-burst`` every ``X-GLMKit-Throttle-Every``-th request returns 429 / 1302 with ``Retry-After: 0``.
 
 It also registers two model ids that only the mock knows, so a mock incumbent and a mock judge belong to other
 model families than the GLM candidates: ``mock-incumbent-1`` and ``mock-judge-1``.
@@ -127,7 +127,7 @@ class MockJudge(Defect):
 
 @register_defect
 class RateLimitBurst(Defect):
-    name = "rate-limit-burst"
+    name = "eval-throttle-burst"
     title = "eval mock: every N-th request (X-GLMKit-Throttle-Every) returns 429 / 1302"
 
     def on_request(self, ctx: MockContext) -> Response | None:

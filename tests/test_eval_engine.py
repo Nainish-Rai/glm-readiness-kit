@@ -161,7 +161,7 @@ async def test_throttling_is_retried_and_never_a_failure(demo, tmp_path) -> None
     prof = yaml.safe_load((demo["profiles"] / "demo-glm-equal.yaml").read_text())
     prof["name"] = "demo-glm-throttled"
     prof["headers"] |= {
-        "X-GLMKit-Defects": "eval-oracle,degrade-quality,rate-limit-burst",
+        "X-GLMKit-Defects": "eval-oracle,degrade-quality,eval-throttle-burst",
         "X-GLMKit-Throttle-Every": "3",
     }
     (demo["profiles"] / "demo-glm-throttled.yaml").write_text(yaml.safe_dump(prof))
@@ -178,7 +178,7 @@ async def test_throttling_is_retried_and_never_a_failure(demo, tmp_path) -> None
 async def test_exhausted_retries_are_throttled_not_failed(demo, tmp_path) -> None:
     prof = yaml.safe_load((demo["profiles"] / "demo-glm-equal.yaml").read_text())
     prof["name"] = "demo-glm-always429"
-    prof["headers"] |= {"X-GLMKit-Defects": "eval-oracle,rate-limit-burst", "X-GLMKit-Throttle-Every": "1"}
+    prof["headers"] |= {"X-GLMKit-Defects": "eval-oracle,eval-throttle-burst", "X-GLMKit-Throttle-Every": "1"}
     (demo["profiles"] / "demo-glm-always429.yaml").write_text(yaml.safe_dump(prof))
     kw = {"task_types": ["classify"], "max_items": 25, "targets": ["demo-glm-always429"], "max_retries": 1}
     env = (await run_eval(opts(demo, tmp_path, **kw))).envelope

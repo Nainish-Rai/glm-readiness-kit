@@ -793,7 +793,7 @@ Per-request mock behaviours, switched on in a profile's `headers` (so one mock s
 and an equal candidate): `X-GLMKit-Defects: eval-oracle,degrade-quality` plus `X-GLMKit-Degrade-Rate`,
 `X-GLMKit-Degrade-Salt`. `eval-oracle` answers with the `<mock-answer>...</mock-answer>` text of the prompt;
 `degrade-quality` corrupts it at the given rate (a hash of salt, replay and prompt, so deterministic);
-`mock-judge` answers pairwise judge prompts (optional `X-GLMKit-Judge-Position-Bias`); `rate-limit-burst`
+`mock-judge` answers pairwise judge prompts (optional `X-GLMKit-Judge-Position-Bias`); `eval-throttle-burst`
 (`X-GLMKit-Throttle-Every`) returns 429/1302 on every N-th request. The module also registers the mock-only models
 `mock-incumbent-1` and `mock-judge-1`. `glmkit eval demo` writes a golden set and profiles that use them.
 

@@ -312,7 +312,9 @@ def analyse(
                     "latency": latency,
                     "output_tokens": tokens,
                     "reliability": _reliability(by[baseline], by[cand], ids),
-                    "recommendation": recommendation(quality, cost, "the whole workload" if tt == ALL else "this task type"),
+                    "recommendation": recommendation(
+                        quality, cost, "the whole workload" if tt == ALL else "this task type"
+                    ),
                     "adjusted": False,
                 }
             )
