@@ -1,6 +1,6 @@
 # 13 · FDE workbench + demo golden sets
 
-Status: blocked · Type: AFK · Label: ready-for-agent · Branch: issue/13-fde-workbench
+Status: in-progress · Type: AFK · Label: ready-for-agent · Branch: issue/13-fde-workbench
 
 ## What to build
 

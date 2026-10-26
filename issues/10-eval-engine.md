@@ -1,6 +1,6 @@
 # 10 · Migration eval engine (switch-eval)
 
-Status: review · Type: AFK · Label: ready-for-agent · Branch: issue/10-eval-engine
+Status: done · Type: AFK · Label: ready-for-agent · Branch: issue/10-eval-engine
 
 ## What to build
 
