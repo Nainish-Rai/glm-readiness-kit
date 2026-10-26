@@ -656,6 +656,15 @@ message. Not done: repair of broken tool-argument JSON inside a *native* Anthrop
 **Proof**: `uv run python tools/bridge-proof/anthropic_proof.py --out results/bridge-demo` (session in
 `tests/anthropic_session.py`).
 
+### 11.2 LiteLLM adapter (issue 08)
+
+`glmkit.bridge.litellm_adapter.LiteLLMBridge` (no LiteLLM import; maps LiteLLM call kwargs and response objects onto
+the core's JSON bodies) and `glmkit.bridge.litellm_plugin.plugin` (the `CustomLogger`; needs the optional extra
+`glmkit[litellm]`). Fix events go through the core `FixEmitter` into the same session envelope as the proxy; the
+recorder gained an optional `source` (`SessionRecorder(..., source="litellm")`): it is written to `config.source`, to
+`ItemResult.labels.source` and to every event's `data.source`; the Bridge tab shows it (absent means `proxy`).
+Fix availability per adapter and the LiteLLM Rust-core finding: `docs/bridge-litellm.md`.
+
 ## 12. Error taxonomy (`glmkit.zai_errors`, slice 03)
 
 One small module maps a Z.ai business code (table in research/01-conformance.md §2.5) to what a caller needs to

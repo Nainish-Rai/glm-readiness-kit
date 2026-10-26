@@ -67,7 +67,7 @@ GLMKit.registerPage("bridge", {
           { label: "Upstream", value: e.upstream || "not logged" },
           { label: "Request", value: e.request_id || "not logged" },
         ],
-        stats: [["protocol", e.details && e.details.protocol === "anthropic" ? "Anthropic Messages" : "OpenAI chat"], ["session", rec.run.run_id], ["started", kit.fmtTime(rec.run.started_at)], ["flavor", rec.run.flavor || "not logged"], ["event time", kit.fmtTime(e.ts)]],
+        stats: [["protocol", e.details && e.details.protocol === "anthropic" ? "Anthropic Messages" : "OpenAI chat"], ["session", rec.run.run_id], ["started", kit.fmtTime(rec.run.started_at)], ["source", rec.run.source || "proxy"], ["flavor", rec.run.flavor || "not logged"], ["event time", kit.fmtTime(e.ts)]],
         main: [
           el("section", { class: "ev" }, el("h4", {}, "Before"), kit.pre(e.before || "not logged")),
           el("section", { class: "ev" }, el("h4", {}, "After"), kit.pre(e.after || "not logged")),
@@ -86,6 +86,7 @@ GLMKit.registerPage("bridge", {
       { key: "ok", label: "Outcome", render: (r) => O.pill(r.ok ? "applied" : "not fixed", r.ok ? "ok" : "err"), value: (r) => (r.ok ? 1 : 0) },
       { key: "request_id", label: "Request", render: (r) => el("span", { class: "mono trunc", "data-tip": r.request_id }, r.request_id || "not logged") },
       { key: "protocol", label: "Protocol", render: (r) => O.pill(r.protocol === "anthropic" ? "Anthropic" : "OpenAI") },
+      { key: "source", label: "Source", render: (r) => O.pill(r.source || "proxy") },
       { key: "upstream", label: "Upstream", render: (r) => (r.upstream ? O.pill(r.upstream) : kit.nl()) },
       { key: "after", label: "Change", render: (r) => el("span", { class: "case-title", "data-tip": `${r.before}\n→ ${r.after}` }, `${r.before} → ${r.after}`) },
     ], [], { label: "Bridge fix events", rowKey: (r) => r.id, sort: { key: "ts", dir: -1 },

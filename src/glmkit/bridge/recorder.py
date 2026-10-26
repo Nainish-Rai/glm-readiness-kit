@@ -46,15 +46,17 @@ class SessionRecorder:
         flavor: str,
         config: dict[str, Any] | None = None,
         redactor: Redactor | None = None,
+        source: str | None = None,
     ) -> None:
         self.out_dir = out_dir
         self.redactor = redactor
+        self.source = source  # which adapter produced the session: None/"proxy" (standalone), "litellm", ...
         self.env = ResultEnvelope(
             run_id=new_run_id("bridge"),
             component="bridge",
             started_at=datetime.now(UTC),
             targets=[TargetInfo.from_profile(profile)],
-            config={"flavor": flavor, **(config or {})},
+            config={"flavor": flavor, **({"source": source} if source else {}), **(config or {})},
         )
         self.requests: list[RequestRecord] = []
         self._lock = threading.Lock()
@@ -73,10 +75,15 @@ class SessionRecorder:
                     kind="fix_event",
                     category=ev.fix_id,
                     target=self.env.targets[0].profile,
-                    labels={"fix_id": ev.fix_id, "request_id": ev.request_id, "upstream": ev.upstream or ""},
+                    labels={
+                        "fix_id": ev.fix_id,
+                        "request_id": ev.request_id,
+                        "upstream": ev.upstream or "",
+                        **({"source": self.source} if self.source else {}),
+                    },
                     status="pass" if ev.ok else "fail",
                     reason=f"{ev.before} -> {ev.after}",
-                    data=ev.to_dict(),
+                    data={**ev.to_dict(), **({"source": self.source} if self.source else {})},
                 )
             )
             self._dirty = True
