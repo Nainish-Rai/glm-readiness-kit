@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+import importlib
 import logging
 import sys
 from contextlib import ExitStack
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any
 
 import typer
 
@@ -38,11 +39,23 @@ def serve(
         list[str] | None, typer.Option("--mock-defect", help="spawn_mock profiles: plant this mock defect (repeatable)")
     ] = None,
     timeout: Annotated[float, typer.Option(help="Upstream timeout in seconds")] = 120.0,
+    search_backend: Annotated[
+        str | None,
+        typer.Option(
+            "--search-backend",
+            help="web_search emulation on /v1/messages: 'fake' (deterministic, offline) or 'module:factory'. "
+            "Default: strip the web_search tool cleanly",
+        ),
+    ] = None,
+    default_max_tokens: Annotated[
+        int, typer.Option(help="max_tokens injected on /v1/messages when the client sent none")
+    ] = 8192,
 ) -> None:
-    """Serve until Ctrl-C. Point an OpenAI SDK at http://HOST:PORT/v1 (any key; the profile's key env var wins)."""
+    """Serve until Ctrl-C. OpenAI SDKs: http://HOST:PORT/v1. Anthropic SDK / Claude Code: ANTHROPIC_BASE_URL=http://HOST:PORT."""
     import uvicorn
 
-    from glmkit.bridge.proxy import ProxyConfig, create_app
+    from glmkit.bridge.anthropic import AnthropicOptions, create_anthropic_app
+    from glmkit.bridge.proxy import ProxyConfig
     from glmkit.contracts.profile import get_profile
     from glmkit.mock import MockConfig, MockServer
 
@@ -55,10 +68,7 @@ def serve(
         )
     except (KeyError, ValueError) as e:
         raise typer.BadParameter(str(e.args[0] if e.args else e)) from e
-    if profile.protocol != "openai_chat":
-        raise typer.BadParameter(
-            f"profile {upstream!r} speaks {profile.protocol}; this proxy forwards to openai_chat upstreams"
-        )
+    backend = _load_search_backend(search_backend)
     with ExitStack() as stack:
         if profile.spawn_mock or "{mock}" in profile.base_url:
             srv = stack.enter_context(
@@ -74,7 +84,9 @@ def serve(
                 f"{profile.api_key_env} is not set (the upstream key is read from the environment)"
             )
         cfg = ProxyConfig(profile=profile, upstream=up, out_dir=out, log_content=log_content, timeout_s=timeout)
-        asgi = create_app(cfg)
+        asgi = create_anthropic_app(
+            cfg, options=AnthropicOptions(search_backend=backend, default_max_tokens=default_max_tokens)
+        )
         rec = asgi.state.recorder
         run_dir = out / rec.env.run_id
         run_dir.mkdir(parents=True, exist_ok=True)
@@ -85,9 +97,30 @@ def serve(
         blog.addHandler(handler)
         blog.addHandler(logging.StreamHandler(sys.stderr))
         blog.setLevel(logging.INFO)
-        typer.echo(f"glm-bridge on http://{host}:{port}/v1  upstream={profile.name} ({profile.url})  flavor={up.name}")
+        paths = "/v1/messages" if profile.protocol == "anthropic_messages" else "/v1/chat/completions, /v1/messages"
+        typer.echo(
+            f"glm-bridge on http://{host}:{port}  serving {paths}  upstream={profile.name} ({profile.url})"
+            f"  flavor={up.name}"
+        )
         typer.echo(f"session: {run_dir / 'result.json'}  content logging: {'ON' if log_content else 'off'}")
         uvicorn.run(asgi, host=host, port=port, log_level="warning")
+
+
+def _load_search_backend(spec: str | None) -> Any:
+    if not spec or spec == "none":
+        return None
+    if spec == "fake":
+        from glmkit.bridge.anthropic import FakeSearchBackend
+
+        return FakeSearchBackend()
+    module, _, attr = spec.partition(":")
+    if not module or not attr:
+        raise typer.BadParameter("--search-backend: use none, fake or module:factory")
+    try:
+        obj = getattr(importlib.import_module(module), attr)
+    except (ImportError, AttributeError) as e:
+        raise typer.BadParameter(f"--search-backend {spec!r}: {e}") from e
+    return obj() if callable(obj) else obj
 
 
 @app.command("flavors")

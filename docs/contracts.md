@@ -618,3 +618,32 @@ and at shutdown. The **Bridge** dashboard tab (`report/pages/bridge.py|js`) read
 errors need no defect: the mock's default behaviour on the `api` class already rejects them.
 
 **Proof**: `uv run python tools/bridge-proof/proof.py --out results/bridge-demo` (OpenAI SDK loop, direct vs bridged).
+
+### 11.1 Anthropic Messages path (`glmkit.bridge.anthropic`, issue 07)
+
+`create_anthropic_app(ProxyConfig, options=AnthropicOptions(...))` is `proxy.create_app` plus `POST .../v1/messages`
+and `.../v1/messages/count_tokens` (through `extra_routes`; the handlers read `app.state.core/emitter/recorder`).
+`glmkit bridge serve` uses it, so one process serves OpenAI SDKs (`/v1`) and Anthropic SDK / Claude Code
+(`ANTHROPIC_BASE_URL=http://host:port`). The upstream follows the endpoint profile's protocol: `anthropic_messages`
+(Z.ai's Anthropic endpoint; fixed and forwarded; the OpenAI route then answers 400 `bridge_wrong_protocol`) or
+`openai_chat` (translated through the core's rewriters and stream rewriter).
+
+| Piece | Where | Notes |
+|---|---|---|
+| Translation | `anthropic/translate.py` | `to_openai_request`, `from_openai_response`, `OpenAIStreamTranslator` (chunks -> `message_start` ... `message_stop`), `events_from_message` (replay), `sign()`: bridge-generated thinking signature (HMAC, `glmkit-v1.`), replay is lenient |
+| Request rewriters | `anthropic/rewriters.py`, `COMMON` + `NATIVE` | same `(ctx, body) -> body` contract as the core's. Add a fix: append to `AnthropicOptions.extra_rewriters` |
+| Token estimate | `anthropic/tokens.py` | `features()` + `TokenCalibrator` (ridge least squares per model over upstream usage). `count_tokens` is always answered locally |
+| web_search | `anthropic/websearch.py` | `SearchBackend` protocol (`async search(query, *, max_results)`); `FakeSearchBackend` is offline and deterministic; no backend = strip. CLI `--search-backend none|fake|module:factory` |
+| Middleware | unchanged hooks | sees the *upstream wire shape*; `ctx.extras["protocol"] == "anthropic"`, `ctx.extras["wire"]` is `anthropic_messages` or `openai_chat`; `on_finish` always gets OpenAI-shaped usage |
+
+Fix events from this path carry `details.protocol == "anthropic"` (the Bridge tab's protocol filter; events without
+it count as `openai`). New fix ids: `anthropic-max-tokens-default`, `anthropic-tool-input-repair`,
+`anthropic-usage-inject`, `anthropic-count-tokens`, `anthropic-history-repair`, `anthropic-web-search-emulate`,
+`anthropic-web-search-run`, `anthropic-web-search-strip`; the shared `thinking-disabled-to-low`, `effort-clamp`,
+`tool-args-*` fire here too. `message_start` carries a calibrated estimate (OpenAI streams report usage last; Z.ai's
+sends 0); the final `message_delta` carries real usage. A web_search emulation streams as a replay of the finished
+message. Not done: repair of broken tool-argument JSON inside a *native* Anthropic stream, `anthropic-beta` forwarding.
+
+**Mock defects**: `bridge-anthropic-zero-start-usage`, `-array-input-500`, `-missing-max-tokens-500`, `-inflated-count`.
+**Proof**: `uv run python tools/bridge-proof/anthropic_proof.py --out results/bridge-demo` (session in
+`tests/anthropic_session.py`).
