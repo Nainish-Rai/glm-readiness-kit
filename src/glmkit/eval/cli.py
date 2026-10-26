@@ -50,7 +50,11 @@ def run(
         float | None, typer.Option("--budget-usd", help="Stop starting calls once this much is spent")
     ] = None,
     prices: Annotated[
-        list[Path] | None, typer.Option("--prices", help="Extra price table YAML (overrides the shipped one)")
+        list[Path] | None,
+        typer.Option(
+            "--prices",
+            help="Extra price entries (same format as glmkit/cost/prices.yaml) layered over the one price table",
+        ),
     ] = None,
     profiles_dir: Annotated[
         list[Path] | None, typer.Option("--profiles-dir", help="Extra folder of endpoint profiles")
@@ -134,19 +138,19 @@ def run(
 
 @app.command()
 def demo(
-    out: Annotated[
-        Path, typer.Option("--out", "-o", help="Folder to write the demo set, profiles and prices into")
-    ] = Path("eval-demo"),
+    out: Annotated[Path, typer.Option("--out", "-o", help="Folder to write the demo set and profiles into")] = Path(
+        "eval-demo"
+    ),
     scale: Annotated[int, typer.Option(help="Multiply the item counts")] = 1,
 ) -> None:
-    """Write the mock-only demo (golden set, planted-quality profiles, demo prices) and print how to run it."""
+    """Write the mock-only demo (golden set, planted-quality profiles) and print how to run it."""
     from glmkit.eval.demo import write_demo
 
     paths = write_demo(out, scale)
-    typer.echo(f"wrote {paths['set']}, {paths['prices']} and {paths['profiles']}/")
+    typer.echo(f"wrote {paths['set']} and {paths['profiles']}/")
     typer.echo(
         f"glmkit eval run --set {paths['set']} --baseline demo-incumbent --targets demo-glm-equal,demo-glm-worse,demo-glm@low,demo-glm@max "  # noqa: E501
-        f"--judge demo-judge --prices {paths['prices']} --profiles-dir {paths['profiles']} --seed 7"
+        f"--judge demo-judge --profiles-dir {paths['profiles']} --seed 7"
     )
 
 
@@ -159,7 +163,7 @@ def show_prices(prices: Annotated[list[Path] | None, typer.Option("--prices")] =
     typer.echo(f"price table {t.version}")
     for e in t.describe()["entries"]:
         typer.echo(
-            f"{e['model']:22} {e['provider']:8} in {e['input']:<7} cached {e['cached_input']:<7} out {e['output']:<7} {e['as_of']}  {e['source_url']}"  # noqa: E501
+            f"{e['model']:22} {e['provider']:14} in {e['input']:<7} cached {e['cached_input']:<7} out {e['output']:<7} {e['as_of']}  {e['source_url']}{'  (MOCK, illustrative)' if e['mock'] else ''}"  # noqa: E501
         )
 
 

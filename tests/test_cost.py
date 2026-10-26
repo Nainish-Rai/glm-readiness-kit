@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+import re
 from datetime import date
+from pathlib import Path
 
 import pytest
 import yaml
@@ -230,3 +232,34 @@ def test_cli_rejects_bad_trace_file(tmp_path) -> None:
 def test_traces_roundtrip_through_jsonl() -> None:
     t = build_session("healthy")[0]
     assert SwitchTrace.model_validate_json(t.to_jsonl()).call_id == t.call_id
+
+
+# ------------------------------------------------------------------ one price file (issue 18)
+def _price_files() -> list[str]:
+    """Data files under src/glmkit that carry per-model API prices, however they are named or nested."""
+    root = Path(__file__).resolve().parents[1] / "src" / "glmkit"
+    hits = []
+    for f in sorted(root.rglob("*")):
+        if f.suffix not in {".yaml", ".yml", ".json"} or "examples" in f.parts:
+            continue
+        text = f.read_text(encoding="utf-8")
+        if re.search(r"\b(cached_input|cached_usd_m|in_usd_m|input_usd|usd_per_1m|usd_per_million)\b", text):
+            hits.append(str(f.relative_to(root)))
+    return hits
+
+
+def test_exactly_one_model_price_file_in_the_package() -> None:
+    assert _price_files() == ["cost/prices.yaml"]
+
+
+def test_deploy_api_prices_come_from_the_one_table() -> None:
+    from glmkit.deploy.sizing import load_catalog
+
+    apis = load_catalog()["apis"]
+    zai = price_for("glm-5.3")
+    assert (apis["zai"]["in_usd_m"], apis["zai"]["cached_usd_m"], apis["zai"]["out_usd_m"]) == (
+        zai.input,
+        zai.cached_input,
+        zai.output,
+    )
+    assert apis["zai"]["source"]["url"] == zai.source

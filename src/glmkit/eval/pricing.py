@@ -1,5 +1,8 @@
-"""Versioned price table and cost computation (kept behind this small interface so issue 12's richer table can
-replace it at merge: anything with ``cost_usd(model, provider, usage)`` and ``version`` works).
+"""Eval-side view of the one price table, ``glmkit.cost.prices`` (issue 18). No price data lives here.
+
+The eval engine needs ``cost_usd(model, provider, usage)`` and ``version``; both come from the canonical table,
+optionally layered with the user's own ``--prices`` files (same entry format as ``glmkit/cost/prices.yaml``, a
+``prices:`` list; later files win on the same host + model).
 
 Usage uses the OpenAI/OTel convention of SwitchTrace: ``input_tokens_total`` includes the cached part, and
 ``output_tokens_total`` includes reasoning tokens (billed as output).
@@ -7,13 +10,13 @@ Usage uses the OpenAI/OTel convention of SwitchTrace: ``input_tokens_total`` inc
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol
 
 import yaml
 
-DEFAULT_TABLE = Path(__file__).with_name("prices.yaml")
+from glmkit.cost.prices import PriceEntry, load_price_table
+from glmkit.cost.prices import PriceTable as CanonicalPriceTable
 
 
 class CostModel(Protocol):
@@ -22,81 +25,53 @@ class CostModel(Protocol):
     def cost_usd(self, model: str, provider: str | None, usage: dict[str, Any]) -> float | None: ...
 
 
-@dataclass(frozen=True)
-class PriceEntry:
-    model: str
-    input: float
-    cached_input: float
-    output: float
-    source_url: str
-    as_of: str
-    provider: str = "*"
-    note: str = ""
-
-
 class PriceTable:
-    def __init__(self, entries: list[PriceEntry], version: str, sources: list[str] | None = None) -> None:
+    def __init__(self, table: CanonicalPriceTable, version: str, sources: list[str]) -> None:
+        self.table = table
         self.version = version
-        self.sources = sources or []
-        self.entries = {(e.provider, e.model): e for e in entries}
+        self.sources = sources
 
     @classmethod
     def load(cls, *paths: Path | str) -> PriceTable:
-        """Load the shipped table, then overlay extra files (later wins on the same provider+model)."""
-        files = [DEFAULT_TABLE, *[Path(p) for p in paths]]
-        entries: dict[tuple[str, str], PriceEntry] = {}
-        versions = []
-        for f in files:
-            data = yaml.safe_load(f.read_text(encoding="utf-8")) or {}
-            versions.append(str(data.get("version", "unversioned")))
-            for raw in data.get("entries", []):
-                missing = [k for k in ("model", "input", "output", "source_url", "as_of") if k not in raw]
-                if missing:
-                    raise ValueError(f"{f}: price entry {raw.get('model')!r} lacks {missing}")
-                e = PriceEntry(
-                    model=raw["model"],
-                    input=float(raw["input"]),
-                    cached_input=float(raw.get("cached_input", raw["input"])),
-                    output=float(raw["output"]),
-                    source_url=str(raw["source_url"]),
-                    as_of=str(raw["as_of"]),
-                    provider=str(raw.get("provider", "*")),
-                    note=str(raw.get("note", "")),
-                )
-                entries[(e.provider, e.model)] = e
-        return cls(list(entries.values()), "+".join(versions), [str(f) for f in files])
+        """The canonical table, then extra files overlaid (later wins on the same host + model)."""
+        base = load_price_table()
+        versions = [str(base.version)]
+        for p in paths:
+            versions.append(
+                str((yaml.safe_load(Path(p).read_text(encoding="utf-8")) or {}).get("version", "unversioned"))
+            )
+        return cls(base.with_overlay(*paths), "+".join(versions), ["glmkit.cost.prices", *[str(p) for p in paths]])
 
     def lookup(self, model: str, provider: str | None = None) -> PriceEntry | None:
-        base = model.rsplit("/", 1)[-1].lower()
-        for key in ((provider or "*", base), ("*", base)):
-            if key in self.entries:
-                return self.entries[key]
-        return None
+        """The priced entry for this call, or None (not logged). A provider with no entry for the model uses the
+        Z.ai list price; a provider whose price is not logged (Bedrock) stays not logged."""
+        return self.table.lookup_for_provider(model, provider)
 
     def cost_usd(self, model: str, provider: str | None, usage: dict[str, Any]) -> float | None:
-        """USD for one call, or None when the model has no price (shown as ``not logged``, never zero)."""
-        e = self.lookup(model, provider)
-        if e is None:
-            return None
-        total = int(usage.get("input_tokens_total") or 0)
-        cached = min(int(usage.get("cache_read_tokens") or 0), total)
-        out = int(usage.get("output_tokens_total") or 0)
-        return ((total - cached) * e.input + cached * e.cached_input + out * e.output) / 1_000_000
+        return self.table.cost_usd(model, provider, usage)
 
-    def describe(self) -> dict[str, Any]:
+    def describe(self, targets: list[tuple[str, str | None]] | None = None) -> dict[str, Any]:
+        """Entries as the Migration tab and ``glmkit eval prices`` show them. ``targets`` = (model, provider) pairs
+        of a run: only the entries those calls were priced with; without it, every priced entry."""
+        if targets is None:
+            rows = [e for e in self.table.prices if e.input is not None and e.output is not None]
+        else:
+            found = [self.lookup(m, p) for m, p in targets]
+            rows = list({(e.host, e.model): e for e in found if e is not None}.values())
         return {
             "version": self.version,
             "files": self.sources,
             "entries": [
                 {
-                    "provider": e.provider,
+                    "provider": "*" if e.host == "zai-api" else e.host,
                     "model": e.model,
                     "input": e.input,
-                    "cached_input": e.cached_input,
+                    "cached_input": e.cached_input if e.cached_input is not None else e.input,
                     "output": e.output,
-                    "source_url": e.source_url,
-                    "as_of": e.as_of,
+                    "source_url": e.source,
+                    "as_of": e.retrieved.isoformat(),
+                    "mock": e.mock,
                 }
-                for e in sorted(self.entries.values(), key=lambda e: (e.model, e.provider))
+                for e in sorted(rows, key=lambda e: (e.model, e.host))
             ],
         }

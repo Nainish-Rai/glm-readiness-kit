@@ -20,7 +20,6 @@ async def test_migration_tab_from_eval_run(tmp_path, monkeypatch) -> None:
             set_path=paths["set"],
             targets=["demo-glm-equal", "demo-glm-worse"],
             baseline="demo-incumbent",
-            prices=[paths["prices"]],
             out_dir=out,
             seed=7,
             n_boot=300,

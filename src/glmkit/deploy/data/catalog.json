@@ -32,20 +32,9 @@
       "price_source": {"url": "https://nebius.com/prices", "date": "2026-10-26", "label": "Nebius on-demand HGX B300"},
       "spec_source": {"url": "https://www.nvidia.com/en-us/data-center/gb300-nvl72/", "date": "2026-10-26", "verified": false}}
   },
-  "apis": {
-    "zai": {"title": "Z.ai API list", "in_usd_m": 1.40, "cached_usd_m": null, "out_usd_m": 4.40,
-      "source": {"url": "https://anotherwrapper.com/tools/llm-pricing/glm-5.3", "date": "2026-10-26", "secondary": true}},
-    "mistral": {"title": "Mistral La Plateforme", "in_usd_m": 1.40, "cached_usd_m": 0.14, "out_usd_m": 4.40,
-      "source": {"url": "https://docs.mistral.ai/inference/pricing", "date": "2026-10-26"}},
-    "mistral-eu": {"title": "Mistral EU regional (1.1x)", "in_usd_m": 1.54, "cached_usd_m": 0.154, "out_usd_m": 4.84,
-      "source": {"url": "https://docs.mistral.ai/inference/regional-inference", "date": "2026-10-26"}},
-    "bedrock-global": {"title": "Bedrock global profile", "in_usd_m": 1.68, "cached_usd_m": 0.31, "out_usd_m": 5.28,
-      "source": {"url": "https://custom.typingmind.com/tools/estimate-llm-usage-costs/amazon-bedrock/us-zai-glm-5-3", "date": "2026-10-26", "secondary": true}},
-    "crusoe": {"title": "Crusoe managed inference", "in_usd_m": 1.40, "cached_usd_m": 0.26, "out_usd_m": 4.40,
-      "source": {"url": "https://crusoe.ai/cloud/pricing", "date": "2026-10-26", "secondary": true}},
-    "scaleway": {"title": "Scaleway Generative APIs", "in_usd_m": 2.01, "cached_usd_m": null, "out_usd_m": 6.15,
-      "source": {"url": "https://computeprices.com", "date": "2026-10-14", "secondary": true}}
-  },
+  "api_hosts": {"_note": "API names the calculator offers -> host key in glmkit.cost.prices (the one model-price table). No prices live here.",
+    "zai": "zai-api", "mistral": "mistral", "mistral-eu": "mistral-eu", "bedrock-global": "bedrock-global",
+    "crusoe": "crusoe", "scaleway": "scaleway"},
   "calibration": {
     "sglang_b1": {"label": "SGLang GLM-5-FP8, 8xH200, TP8, random 1000/1000, concurrency 1", "gpu": "h200", "n_gpus": 8, "batch": 1,
       "out_tok_s": 117.96, "url": "https://docs.sglang.io/cookbook/autoregressive/GLM/GLM-5", "date": "2026-10-26",

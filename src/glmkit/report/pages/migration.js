@@ -210,7 +210,7 @@ GLMKit.registerPage("migration", {
     const notes = [
       ...(data.warnings || []).map((w) => el("p", {}, O.pill("note", "warn"), " " + w)),
       el("p", {}, `Method: ${data.method.unit}. ${data.method.ci}. ${data.method.verdict}.`),
-      el("p", {}, `Price table ${data.price_table.version}: ` + data.price_table.entries.slice(0, 6).map((e) => `${e.model}${e.provider !== "*" ? "@" + e.provider : ""} in $${e.input} / cached $${e.cached_input} / out $${e.output} per 1M (${e.as_of})`).join("; ")),
+      el("p", {}, `Price table ${data.price_table.version}: ` + data.price_table.entries.slice(0, 6).map((e) => `${e.model}${e.provider !== "*" ? "@" + e.provider : ""} in $${e.input} / cached $${e.cached_input} / out $${e.output} per 1M (${e.as_of})${e.mock ? " MOCK, illustrative" : ""}`).join("; ")),
     ];
     const runCard = el("div", { class: "card heuristic" },
       el("div", { class: "card-h" }, el("h2", {}, "Run details"), O.pill("cost = estimate", "heur"), el("span", { class: "hint" }, "what was run, what it cost, what to distrust")),
