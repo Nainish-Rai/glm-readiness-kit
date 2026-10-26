@@ -1,0 +1,34 @@
+schema_version: 1
+id: TOOL-002
+title: "Tools are offered but the question needs none: answer in text, no tool call (irrelevance)"
+category: tools/no-call
+severity: major
+kind: statistical
+applies_to:
+  models: [glm-5.3, glm-5.3-flash, glm-5.3-flashx, glm-5.2]
+  protocols: [openai_chat, anthropic_messages]
+  endpoint_classes: [api, plan, third_party, self_hosted]
+source:
+  issues: ["ShishirPatil/gorilla (BFCL irrelevance)"]
+  urls:
+    - https://github.com/ShishirPatil/gorilla/tree/main/berkeley-function-call-leaderboard
+  spec:
+    - https://docs.z.ai/guides/capabilities/function-calling.md
+  first_seen: 2026-10-26
+modes: [nonstream]
+repeats: 20
+request:
+  messages:
+    - {role: user, content: "What is 2+2? Answer with just the number."}
+  tools:
+    - $ref: fixtures/tools/get_weather.json
+  tool_choice: auto
+  max_tokens: 200
+expect:
+  default:
+    - {check: http_status, equals: 200}
+    - {check: finish_reason, in: [stop]}
+    - {check: tool_call_count, equals: 0}
+    - {check: content_present}
+    - {check: pass_rate_wilson, gte: 0.9}
+notes: "Planted defect: tools-always-called."

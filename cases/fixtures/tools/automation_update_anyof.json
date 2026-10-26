@@ -1,0 +1,45 @@
+{
+  "type": "function",
+  "function": {
+    "name": "automation_update",
+    "description": "Update an automation.",
+    "parameters": {
+      "type": "object",
+      "properties": {},
+      "anyOf": [
+        {
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "mode": {
+              "const": "view"
+            }
+          },
+          "required": [
+            "id",
+            "mode"
+          ]
+        },
+        {
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "mode": {
+              "const": "edit"
+            },
+            "content": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "id",
+            "mode",
+            "content"
+          ]
+        }
+      ]
+    }
+  }
+}

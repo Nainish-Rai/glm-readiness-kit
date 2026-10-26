@@ -1,0 +1,87 @@
+{
+  "type": "function",
+  "function": {
+    "name": "record_event",
+    "description": "Record a typed event.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer"
+        },
+        "ratio": {
+          "type": "number"
+        },
+        "active": {
+          "type": "boolean"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "level": {
+          "type": "string",
+          "enum": [
+            "low",
+            "mid",
+            "high"
+          ]
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "sku": {
+                "type": "string"
+              },
+              "qty": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "sku",
+              "qty"
+            ]
+          }
+        },
+        "meta": {
+          "type": "object",
+          "properties": {
+            "owner": {
+              "type": "string"
+            },
+            "tags": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "owner"
+          ]
+        },
+        "label": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "count",
+        "ratio",
+        "active",
+        "note",
+        "level",
+        "items",
+        "meta",
+        "label"
+      ]
+    }
+  }
+}

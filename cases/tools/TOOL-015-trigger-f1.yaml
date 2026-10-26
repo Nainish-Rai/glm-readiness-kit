@@ -1,0 +1,32 @@
+schema_version: 1
+id: TOOL-015
+title: "K2VV-style replay: tool-call trigger F1 and schema accuracy against the reference"
+category: tools/trigger-f1
+severity: major
+kind: statistical
+executor: k2vv_replay
+executor_config:
+  corpus: corpora/k2vv-sample.jsonl
+  max_tokens: 400
+applies_to:
+  models: [glm-5.3, glm-5.3-flash, glm-5.3-flashx, glm-5.2]
+  protocols: [openai_chat, anthropic_messages]
+  endpoint_classes: [api, plan, third_party, self_hosted]
+source:
+  issues: ["MoonshotAI/K2-Vendor-Verifier"]
+  urls:
+    - https://github.com/MoonshotAI/K2-Vendor-Verifier
+    - https://github.com/Prism-Shadow/agent-provider-verifier
+  first_seen: 2026-10-26
+modes: [nonstream]
+request:
+  messages: []
+expect:
+  default:
+    - {check: k2vv_scores, f1_gte: 0.73, schema_accuracy_gte: 0.9}
+tolerance: {reference: corpus_reference, f1_floor: 0.73, schema_accuracy_margin: 0.02}
+notes: >
+  The replay adapter reads K2VV / Prism JSONL (one chat-completions request per line). The reference finish reason
+  comes from a `reference` object per line or from --reference results.jsonl of the official API; 0.73 is the K2VV
+  acceptance band (official run-to-run minimum 75.81%). The bundled 20-line sample is synthetic, with one deliberate
+  disagreement. For a real corpus use `glmkit conform k2vv <file>`. Planted defect: tools-always-called.

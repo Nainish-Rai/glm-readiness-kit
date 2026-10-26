@@ -1,0 +1,32 @@
+schema_version: 1
+id: TOOL-012
+title: "Parallel calls carry unique non-empty ids, type function and consecutive index from 0"
+category: tools/dup-ids
+severity: major
+kind: deterministic
+applies_to:
+  models: [glm-5.3, glm-5.3-flash, glm-5.3-flashx, glm-5.2]
+  protocols: [openai_chat, anthropic_messages]
+  endpoint_classes: [api, plan, third_party, self_hosted]
+source:
+  issues: ["charmbracelet/crush#3153", "redd34/canitoolcall"]
+  urls:
+    - https://github.com/charmbracelet/crush/issues/3153
+    - https://github.com/redd34/canitoolcall
+  first_seen: 2026-10-26
+modes: [nonstream, stream]
+request:
+  messages:
+    - {role: user, content: "Call get_weather for Oslo, get_time for Lima and get_news for sports in one turn."}
+  tools:
+    - $ref: fixtures/tools/get_weather.json
+    - $ref: fixtures/tools/get_time.json
+    - $ref: fixtures/tools/get_news.json
+  tool_choice: auto
+  max_tokens: 500
+expect:
+  default:
+    - {check: http_status, equals: 200}
+    - {check: tool_call_count, equals: 3, names: [get_weather, get_time, get_news]}
+    - {check: tool_ids_unique}
+notes: "Planted defect: duplicate-tool-ids. The type field is only checked on non-stream bodies."

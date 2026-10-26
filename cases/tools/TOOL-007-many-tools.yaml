@@ -1,0 +1,59 @@
+schema_version: 1
+id: TOOL-007
+title: "128 tools: the requested tool is picked; 129 tools: a structured 400, not a crash"
+category: tools/many
+severity: major
+kind: statistical
+executor: tool_shape
+executor_config:
+  n_tools: {default: 128, n129: 129}
+  target_index: 100
+applies_to:
+  models: [glm-5.3, glm-5.3-flash, glm-5.3-flashx, glm-5.2]
+  protocols: [openai_chat, anthropic_messages]
+  endpoint_classes: [api, plan, third_party, self_hosted]
+source:
+  issues: []
+  urls:
+    - https://docs.z.ai/api-reference/llm/chat-completion.md
+  spec:
+    - https://docs.z.ai/api-reference/llm/chat-completion.md
+  first_seen: 2026-10-26
+modes: [nonstream]
+repeats: 10
+request:
+  messages:
+    - {role: system, content: "You are a helpful assistant. Use tools to complete the task."}
+  max_tokens: 300
+variants:
+  - id: n129
+    expect:
+      default:
+        - {check: no_5xx}
+        - {check: no_internal_leak}
+      api:
+        - {check: http_status, equals: 400}
+        - {check: error_code, matches: "^121[0-9]$"}
+        - {check: error_shape}
+        - {check: pass_rate_wilson, gte: 0.9}
+      plan:
+        - {check: http_status, equals: 400, soft: true}
+        - {check: pass_rate_wilson, gte: 0.9}
+      third_party:
+        - {check: http_status, in: [200, 400]}
+        - {check: pass_rate_wilson, gte: 0.9}
+      self_hosted:
+        - {check: http_status, in: [200, 400]}
+        - {check: pass_rate_wilson, gte: 0.9}
+expect:
+  default:
+    - {check: http_status, equals: 200}
+    - {check: finish_reason, in: [tool_calls]}
+    - {check: tool_call_count, equals: 1, names: [tool_100]}
+    - {check: tool_calls_valid}
+    - {check: pass_rate_wilson, gte: 0.9}
+tolerance: {reference: official_api}
+notes: >
+  Synthetic tools tool_000 ... tool_127; the user asks for tool_100 (past the middle, so a truncating host picks
+  wrong). The 129-tool variant expects the documented limit error on the API class and accepts 200 or 400
+  on third-party and self-hosted hosts, but never a 5xx. Planted defect: many-tools-broken.

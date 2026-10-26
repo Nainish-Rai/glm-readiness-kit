@@ -1,0 +1,45 @@
+schema_version: 1
+id: TOOL-011
+title: "Tool-call markup never leaks into content or reasoning, at 8k, 64k and 130k tokens of context, thinking on"
+category: tools/markers
+severity: critical
+kind: deterministic
+executor: tool_shape
+executor_config:
+  context_tokens: {default: 8000, ctx-64k: 64000, ctx-130k: 130000}
+  filler_tool: read_file
+applies_to:
+  models: [glm-5.3, glm-5.3-flash, glm-5.3-flashx, glm-5.2]
+  protocols: [openai_chat, anthropic_messages]
+  endpoint_classes: [api, plan, third_party, self_hosted]
+source:
+  issues: ["anomalyco/opencode#6708"]
+  urls:
+    - https://github.com/anomalyco/opencode/issues/6708
+  first_seen: 2026-10-26
+modes: [nonstream, stream]
+request:
+  messages:
+    - {role: system, content: "You are a coding agent. Use the tools to complete the task."}
+    - {role: user, content: "Run the test suite now: call run_tests."}
+  tools:
+    - $ref: fixtures/tools/read_file.json
+    - $ref: fixtures/tools/run_tests.json
+  tool_choice: auto
+  max_tokens: 400
+  params: {thinking: {type: enabled}}
+variants:
+  - id: ctx-64k
+    request: {}
+  - id: ctx-130k
+    request: {}
+expect:
+  default:
+    - {check: http_status, equals: 200}
+    - {check: finish_reason, in: [tool_calls]}
+    - {check: tool_call_count, equals: 1, names: [run_tests]}
+    - {check: tool_calls_valid}
+    - {check: no_marker_leak}
+notes: >
+  The research lists 8k / 64k / 100k / 130k / 200k; 8k, 64k and 130k are shipped (200k only adds request size).
+  Token counts use 4 characters per token, so real tokenizers see fewer or more tokens. Planted defect: tool-marker-leak.

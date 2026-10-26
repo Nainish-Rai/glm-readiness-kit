@@ -1,0 +1,38 @@
+schema_version: 1
+id: TOOL-005
+title: "A 20 KB write_file content with </tool_call>, <arg_key>, quotes, backslashes and edge spaces is returned byte-identical"
+category: tools/string-fidelity
+severity: critical
+kind: deterministic
+executor: tool_shape
+executor_config: {write_file_bytes: 20480}
+applies_to:
+  models: [glm-5.3, glm-5.3-flash, glm-5.3-flashx, glm-5.2]
+  protocols: [openai_chat, anthropic_messages]
+  endpoint_classes: [api, plan, third_party, self_hosted]
+source:
+  issues: ["ollama/ollama#18659", "ollama/ollama#18658", "charmbracelet/crush#3153"]
+  urls:
+    - https://github.com/ollama/ollama/issues/18659
+    - https://github.com/charmbracelet/crush/issues/3153
+  first_seen: 2026-10-26
+modes: [nonstream, stream]
+request:
+  messages:
+    - {role: system, content: "You are a coding agent. Use the tools to edit files."}
+  tools:
+    - $ref: fixtures/tools/write_file.json
+  tool_choice: auto
+  max_tokens: 8000
+expect:
+  default:
+    - {check: http_status, equals: 200}
+    - {check: finish_reason, in: [tool_calls]}
+    - {check: tool_call_count, equals: 1, names: [write_file]}
+    - {check: tool_calls_valid}
+    - {check: tool_args_echo_prompt}
+    - {check: no_marker_leak}
+notes: >
+  The executor builds the prompt ("call write_file with exactly these arguments: {json}"); the check compares the
+  returned arguments with the JSON in the prompt, character for character. A crash of a strict client JSON parser
+  (crush#3153) is the downstream effect of a truncated argument. Planted defect: tool-call-end-truncation.

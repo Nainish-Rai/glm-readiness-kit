@@ -1,0 +1,18 @@
+{
+  "type": "function",
+  "function": {
+    "name": "run_tests",
+    "description": "Run the project's test suite.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "target": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "target"
+      ]
+    }
+  }
+}

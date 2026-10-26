@@ -1,0 +1,46 @@
+schema_version: 1
+id: TOOL-009
+title: "History replay: an assistant turn with string arguments and content null (or empty) plus the tool result is accepted"
+category: tools/roundtrip
+severity: critical
+kind: deterministic
+applies_to:
+  models: [glm-5.3, glm-5.3-flash, glm-5.3-flashx, glm-5.2]
+  protocols: [openai_chat, anthropic_messages]
+  endpoint_classes: [api, plan, third_party, self_hosted]
+source:
+  issues: ["zai-org/GLM-5#158", "vllm-project/vllm#56868"]
+  urls:
+    - https://github.com/zai-org/GLM-5/issues/158
+    - https://github.com/vllm-project/vllm/issues/56868
+  spec:
+    - https://docs.z.ai/guides/capabilities/function-calling.md
+  first_seen: 2026-10-26
+modes: [nonstream, stream]
+request:
+  messages:
+    - {"role": "user", "content": "What is the weather in Paris?"}
+    - {"role": "assistant", "content": null, "tool_calls": [{"id": "call_rt_1", "type": "function", "function": {"name": "get_weather", "arguments": "{\"city\": \"Paris\"}"}}]}
+    - {"role": "tool", "tool_call_id": "call_rt_1", "content": "{\"temp_c\": 18, \"sky\": \"clear\"}"}
+  tools:
+    - $ref: fixtures/tools/get_weather.json
+  tool_choice: auto
+  max_tokens: 300
+variants:
+  - id: content-empty
+    request:
+      messages:
+        - {"role": "user", "content": "What is the weather in Paris?"}
+        - {"role": "assistant", "content": "", "tool_calls": [{"id": "call_rt_1", "type": "function", "function": {"name": "get_weather", "arguments": "{\"city\": \"Paris\"}"}}]}
+        - {"role": "tool", "tool_call_id": "call_rt_1", "content": "{\"temp_c\": 18, \"sky\": \"clear\"}"}
+expect:
+  default:
+    - {check: http_status, equals: 200}
+    - {check: no_5xx}
+    - {check: no_internal_leak}
+    - {check: finish_reason, in: [stop]}
+    - {check: content_present, matches: "18"}
+notes: >
+  OpenAI-style history: tool_calls[].function.arguments is a JSON string (not an object) and the assistant content
+  is null / "". The answer must use the tool result. Planted defects: dict-only-chat-template (string
+  arguments crash the template) and null-content-rejected (variant content-null).
