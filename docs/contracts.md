@@ -540,3 +540,31 @@ class MyAdapter(Adapter):
 `glmkit.traces.common` has the usage converters (`openai_usage`, `anthropic_usage`), message and tool converters, and
 `parse_ts`. Add a fixture under `tests/fixtures/traces/`, a golden file (`GLMKIT_UPDATE_GOLDEN=1 uv run pytest
 tests/test_traces.py`) and a row in `CASES` in `tests/test_traces.py`; a test fails for any adapter without one.
+
+## 10. Price table (`glmkit.cost.prices`, owned by issue 12)
+
+One versioned YAML, `src/glmkit/cost/prices.yaml` (override: `$GLMKIT_PRICES` or `load_price_table(path)`). Issues 09
+(guard) and 10 (eval) read prices only through this API and never keep their own.
+
+```python
+from glmkit.cost.prices import load_price_table, price_for
+e = price_for("glm-5.3")                    # PriceEntry | None; host defaults to "zai-api"
+e.input, e.cached_input, e.output           # USD per 1M tokens; None = "not logged" (never guess a price)
+e.source, e.retrieved                       # URL + date, required on every entry
+table = load_price_table()
+table.hosts("glm-5.3")                      # every host listing the model: zai-api, openrouter-cheapest, bedrock ...
+table.lookup("glm-5.3-flash", "zai-api")
+table.coding_plan.tiers                     # Lite/Pro/Max: usd_per_month, credits_5h, credits_weekly
+table.coding_plan.off_peak_multiplier.value # 0.5 (published); reported_peak_multiplier is heuristic=True
+table.effort_factor("max", "high")          # EffortFactor(factor=0.5, heuristic=True) | None
+```
+
+- Loading fails (pydantic `ValidationError`) for any entry without a `source` URL or a `retrieved` date;
+  `tests/test_cost.py` pins this.
+- Coding Plan: tier prices, 5-hour and weekly credit caps, the peak window and the 50% off-peak rate are
+  published. Credits charged per token are not, so credits-needed figures need a user-supplied, heuristic
+  `--credits-per-usd`. The 3x peak burn is an unofficial user report and is flagged `heuristic`.
+- Cost math: `glmkit.cost.projection.cost_usd(workload, entry)` = `(input - cache_read) x input + cache_read x
+  cached_input + output x output` (input includes cache, output includes reasoning). Missing price gives `None`.
+- Cost result envelope: `component: "cost"`, `data` = analysis (totals, causes, verbosity, tokenizer, projection),
+  one `cost_trace` item per trace with per-turn forensics in `item.data.turns`. The Cost tab reads the newest one.
