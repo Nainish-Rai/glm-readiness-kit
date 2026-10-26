@@ -1,0 +1,107 @@
+# glmkit guard: default destructive-command policy.
+#
+# Evaluated on tool-call arguments before they reach the agent (bridge) or run (Claude Code hook).
+# kind: command  -> regex runs on each shell segment (after splitting on ; && || | &, unwrapping sudo/env/nohup/
+#                   bash -c, and expanding $(...)), with quotes removed and tokens joined by one space. Anchored
+#                   patterns therefore never fire on `echo "rm -rf /"` or `git commit -m "..."`.
+# kind: text     -> regex runs on the whole raw string (for SQL and pipelines that span segments).
+# action: allow | deny | ask. The first matching rule wins per segment; across segments the strictest wins
+# (deny > ask > allow). A rule may carry `unless` (regex; skips the rule) and `tools` (tool-name globs).
+# Custom policy files may set include_default: true to keep these rules (theirs are checked first).
+
+shell_tools: ["bash", "shell", "sh", "exec", "exec_command", "execute*", "run_command", "run_shell*", "run_terminal*", "terminal", "local_shell", "*_bash", "bash_*"]
+command_keys: ["command", "cmd", "script", "shell_command", "bash_command", "commands", "cmdline"]
+text_keys: ["sql", "query", "statement", "sql_query", "queries"]
+
+rules:
+  - id: rm-root-or-home
+    action: deny
+    kind: command
+    description: recursive rm aimed at /, ~, $HOME, *, . or a system directory
+    regex: '^rm\b(?=.*\s(?:-[a-zA-Z]*[rR][a-zA-Z]*|--recursive)(?:\s|$))(?=.*\s(?:/|/\*|~|~/|~/\*|\$HOME|\$HOME/|\$HOME/\*|\*|\.|\.\.|\./\*|/home|/etc|/usr|/var|/bin|/boot|/lib)(?:\s|$))'
+  - id: rm-no-preserve-root
+    action: deny
+    kind: command
+    description: rm --no-preserve-root
+    regex: '^rm\b.*\s--no-preserve-root\b'
+  - id: rm-rf
+    action: ask
+    kind: command
+    description: forced recursive delete (rm -rf)
+    regex: '^rm\b(?=.*\s(?:-[a-zA-Z]*[rR][a-zA-Z]*|--recursive)(?:\s|$))(?=.*\s(?:-[a-zA-Z]*f[a-zA-Z]*|--force)(?:\s|$))'
+  - id: git-force-push-protected
+    action: deny
+    kind: command
+    description: forced git push to main, master, trunk, production or a release branch
+    regex: '^git(?:\s+(?:-c\s+\S+|-C\s+\S+|-\S+))*\s+push\b(?=.*\s(?:--force|-[a-zA-Z]*f[a-zA-Z]*|--mirror|\+\S+)(?:\s|$))(?=.*(?:\s|:|\+|/)(?:main|master|trunk|production|prod|release\S*)(?:\s|$))'
+  - id: git-force-push
+    action: ask
+    kind: command
+    description: forced git push (--force / -f / +refspec; --force-with-lease is allowed)
+    regex: '^git(?:\s+(?:-c\s+\S+|-C\s+\S+|-\S+))*\s+push\b(?=.*\s(?:--force|-[a-zA-Z]*f[a-zA-Z]*|--mirror|\+\S+)(?:\s|$))'
+  - id: git-reset-hard
+    action: ask
+    kind: command
+    description: git reset --hard discards uncommitted work
+    regex: '^git(?:\s+(?:-c\s+\S+|-C\s+\S+|-\S+))*\s+reset\b.*\s--hard\b'
+  - id: git-clean-force
+    action: ask
+    kind: command
+    description: git clean -f deletes untracked files
+    regex: '^git(?:\s+(?:-c\s+\S+|-C\s+\S+|-\S+))*\s+clean\b(?=.*\s-[a-zA-Z]*f)'
+    unless: '\s(?:-[a-zA-Z]*n[a-zA-Z]*|--dry-run)(?:\s|$)'
+  - id: sql-drop
+    action: deny
+    kind: text
+    description: SQL DROP TABLE / DATABASE / SCHEMA
+    regex: '(?i)\bdrop\s+(?:table|database|schema)\b'
+  - id: sql-truncate
+    action: ask
+    kind: text
+    description: SQL TRUNCATE TABLE
+    regex: '(?i)\btruncate\s+table\b'
+  - id: sql-delete-without-where
+    action: ask
+    kind: text
+    description: SQL DELETE FROM without a WHERE clause
+    regex: '(?i)\bdelete\s+from\s+[\w."`\[\]]+\s*(?:;|$|"|\x27)'
+  - id: disk-format
+    action: deny
+    kind: command
+    description: mkfs / dd to a block device / redirect onto a block device
+    regex: '^(?:mkfs(?:\.\w+)?\b|dd\b.*\sof=/dev/(?:sd|hd|nvme|disk|rdisk|xvd|vd)|.*(?:^|\s)>+\s*/dev/(?:sd|hd|nvme|disk|rdisk|xvd|vd))'
+  - id: chmod-chown-recursive-root
+    action: deny
+    kind: command
+    description: recursive chmod/chown on /, ~ or $HOME
+    regex: '^(?:chmod|chown)\b(?=.*\s(?:-[a-zA-Z]*R[a-zA-Z]*|--recursive)(?:\s|$))(?=.*\s(?:/|~|~/|\$HOME)(?:\s|$))'
+  - id: fork-bomb
+    action: deny
+    kind: text
+    description: shell fork bomb
+    regex: ':\(\)\s*\{\s*:\s*\|\s*:\s*&\s*\}\s*;\s*:'
+  - id: pipe-to-shell
+    action: ask
+    kind: text
+    description: curl or wget piped into a shell
+    regex: '(?i)\b(?:curl|wget)\b[^|;&]*\|\s*(?:sudo\s+)?(?:ba|z|da)?sh\b'
+  - id: terraform-destroy
+    action: ask
+    kind: command
+    description: terraform destroy
+    regex: '^terraform\b.*\sdestroy\b'
+  - id: kubectl-delete-broad
+    action: ask
+    kind: command
+    description: kubectl delete of a namespace, node, volume or --all
+    regex: '^kubectl\b(?=.*\sdelete\b)(?=.*(?:\s(?:ns|namespace|namespaces|node|nodes|pv|pvc)\b|\s--all\b))'
+  - id: docker-prune
+    action: ask
+    kind: command
+    description: docker system/volume prune
+    regex: '^docker\b.*\s(?:system|volume)\s+prune\b'
+  - id: host-shutdown
+    action: deny
+    kind: command
+    description: shutdown / reboot / halt / poweroff
+    regex: '^(?:shutdown|reboot|halt|poweroff|systemctl\s+(?:poweroff|reboot|halt))\b'

@@ -50,6 +50,18 @@ def serve(
     default_max_tokens: Annotated[
         int, typer.Option(help="max_tokens injected on /v1/messages when the client sent none")
     ] = 8192,
+    guard: Annotated[
+        bool, typer.Option("--guard", help="Enable the spend/loop guard middleware (docs/guard.md)")
+    ] = False,
+    guard_config: Annotated[
+        Path | None, typer.Option("--guard-config", help="Guard YAML (budgets, loop, policy, audit); implies --guard")
+    ] = None,
+    guard_audit: Annotated[
+        Path | None, typer.Option("--guard-audit", help="Audit log path (default $GLMKIT_GUARD_AUDIT)")
+    ] = None,
+    guard_log_args: Annotated[
+        bool, typer.Option("--guard-log-args", help="Store full tool arguments in the audit log (default: hashes only)")
+    ] = False,
 ) -> None:
     """Serve until Ctrl-C. OpenAI SDKs: http://HOST:PORT/v1. Anthropic SDK / Claude Code: ANTHROPIC_BASE_URL=http://HOST:PORT."""
     import uvicorn
@@ -83,7 +95,21 @@ def serve(
             raise typer.BadParameter(
                 f"{profile.api_key_env} is not set (the upstream key is read from the environment)"
             )
-        cfg = ProxyConfig(profile=profile, upstream=up, out_dir=out, log_content=log_content, timeout_s=timeout)
+        middleware: list = []
+        if guard or guard_config or guard_audit:
+            from glmkit.guard import GuardMiddleware
+            from glmkit.guard.config import GuardConfig
+
+            gcfg = GuardConfig.load(guard_config)
+            if guard_audit:
+                gcfg.audit_path = str(guard_audit)
+            gcfg.log_args = gcfg.log_args or guard_log_args
+            gmw = GuardMiddleware(gcfg, out_dir=out)
+            middleware.append(gmw)
+            typer.echo(f"guard ON  audit={gmw.audit.path}  policy={gmw.policy.source if gmw.policy else 'off'}")
+        cfg = ProxyConfig(
+            profile=profile, upstream=up, out_dir=out, log_content=log_content, timeout_s=timeout, middleware=middleware
+        )
         asgi = create_anthropic_app(
             cfg, options=AnthropicOptions(search_backend=backend, default_max_tokens=default_max_tokens)
         )

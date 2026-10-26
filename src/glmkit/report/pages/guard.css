@@ -1,0 +1,21 @@
+/* Guard tab. Tokens only. */
+.burn { width: 100%; height: auto; display: block; }
+.burn .grid-line { stroke: var(--edge); stroke-width: 1; }
+.burn .axis-text { fill: var(--fg-meta); font: var(--text-meta) var(--font-mono); }
+.burn .line { fill: none; stroke: var(--accent); stroke-width: 2; }
+.burn .area { fill: var(--accent-tint); stroke: none; }
+.burn .soft { stroke: var(--warn); stroke-width: 1; stroke-dasharray: 4 4; }
+.burn .hard { stroke: var(--err); stroke-width: 1; stroke-dasharray: 4 4; }
+.burn .limit-text-soft { fill: var(--warn); font: var(--text-meta) var(--font-mono); }
+.burn .limit-text-hard { fill: var(--err); font: var(--text-meta) var(--font-mono); }
+.burn .pt { fill: var(--accent); }
+.burn .pt.over { fill: var(--err); }
+.burn-legend { display: flex; flex-wrap: wrap; gap: var(--space-4); padding-top: var(--space-2); font-size: var(--text-meta); color: var(--fg-meta); }
+.sess-pick { display: grid; gap: var(--space-2); }
+.chain { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+.chain .mono { overflow-wrap: anywhere; }
+.guard-grid > .card { min-width: 0; }
+.guard-grid .tbl-wrap { overflow-x: auto; }
+.summary { margin: 0; color: var(--fg-body); font-size: var(--text-body); overflow-wrap: anywhere; }
+.guard-grid .kv dd, .guard-grid .kv dt { min-width: 0; overflow-wrap: anywhere; }
+.guard-grid .barlist, .guard-grid .sess-pick { min-width: 0; }
