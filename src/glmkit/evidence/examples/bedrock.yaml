@@ -1,0 +1,23 @@
+# Example only: fictional customer. GLM 5.3 through Amazon Bedrock cross-Region inference.
+schema_version: 1
+name: acme-bedrock
+description: Document processing through the Bedrock global inference profile, called from eu-central-1.
+path: bedrock
+jurisdictions: [EU, SG, US]
+hosting:
+  provider: Amazon Bedrock
+  region: eu-central-1 (calling Region only)
+  jurisdiction: unknown   # calling Region is in the EU; processing Region is not pinned
+  endpoint: global.zai.glm-5.3
+  bedrock_profile: global
+data_flow:
+  clients: [Document pipeline]
+  telemetry_to_zai: null
+personal_data:
+  categories: [contract counterparty names]
+  special_category: false
+  data_subjects: [business contacts]
+retention:
+  logs_days: 30
+sub_processors:
+  - {name: Amazon Web Services, role: model host (cross-Region), location: any Region of the global profile, outside_eea: true}
