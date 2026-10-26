@@ -1,0 +1,35 @@
+id: banking77
+title: Banking77 intent classification
+summary: 77 fine-grained banking customer-service intents; the model must name the intent. Exact-match grader.
+task_types: [classify]
+items: 80
+sampling: "80 items drawn from the official test split with random.Random(77), stratified round-robin over labels"
+graders:
+  classify: {type: exact, ignore_case: true, strip_punct: true}
+source:
+  dataset: PolyAI/banking77
+  url: https://github.com/PolyAI-LDN/task-specific-datasets/tree/57ec275d8078af65b7731c2a98be812d844a6d6b/banking_data
+  hf_url: https://huggingface.co/datasets/PolyAI/banking77
+  revision: 57ec275d8078af65b7731c2a98be812d844a6d6b
+  revision_kind: github-commit (PolyAI-LDN/task-specific-datasets)
+  hf_revision: 90d4e2ee5521c04fc1488f065b8b083658768c57
+  files:
+    - url: https://raw.githubusercontent.com/PolyAI-LDN/task-specific-datasets/57ec275d8078af65b7731c2a98be812d844a6d6b/banking_data/test.csv
+      path: banking_data/test.csv
+      sha256: d12d6e3bc4c3103966ae786dc435913c0c563dfa328f5a3646d0e62cfeeb474d
+      bytes: 239961
+license:
+  spdx: CC-BY-4.0
+  name: Creative Commons Attribution 4.0 International
+  url: https://creativecommons.org/licenses/by/4.0/
+  verified_at: "2026-10-26"
+  verified_via:
+    - "Hugging Face API https://huggingface.co/api/datasets/PolyAI/banking77 at revision 90d4e2ee: cardData.license = cc-by-4.0"
+    - "GitHub API repos/PolyAI-LDN/task-specific-datasets: license = CC-BY-4.0; LICENSE file starts 'Attribution 4.0 International' (commit 57ec275d)"
+  notes: Card metadata, not legal review.
+attribution: >-
+  Banking77 by PolyAI (Casanueva et al., 2020, "Efficient Intent Detection with Dual Sentence Encoders",
+  https://arxiv.org/abs/2003.04807), licensed CC BY 4.0. The kit samples and re-formats the test split into a
+  golden set; no text is altered.
+modifications: Sampled 80 test items, wrapped in a classification prompt that lists the 77 labels.
+standin: "Synthetic stand-in (40 templated tickets over 10 of the 77 labels, written for this kit, not Banking77 text)."

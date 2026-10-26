@@ -1,0 +1,35 @@
+id: text2sql
+title: Text-to-SQL (gretelai synthetic)
+summary: Natural-language question plus a table schema; the model writes SQL, graded by executing it and comparing result sets.
+task_types: [text_to_sql]
+items: 60
+sampling: "60 items of the test split whose context and reference SQL execute in SQLite and return rows, random.Random(11)"
+graders:
+  text_to_sql: {type: sql, ordered: false}
+source:
+  dataset: gretelai/synthetic_text_to_sql
+  url: https://huggingface.co/datasets/gretelai/synthetic_text_to_sql/tree/740ab236e64503fba51be1101df7a1be83bf455d
+  hf_url: https://huggingface.co/datasets/gretelai/synthetic_text_to_sql
+  revision: 740ab236e64503fba51be1101df7a1be83bf455d
+  revision_kind: huggingface-commit
+  requires: "pip install 'glmkit[datasets]' (pyarrow reads the parquet file)"
+  files:
+    - url: https://huggingface.co/datasets/gretelai/synthetic_text_to_sql/resolve/740ab236e64503fba51be1101df7a1be83bf455d/synthetic_text_to_sql_test.snappy.parquet
+      path: synthetic_text_to_sql_test.snappy.parquet
+      sha256: f2056edcd897db59c89d12bde149a36d4e242ac0d2c6d4d42b1f2bc764318993
+      bytes: 1901018
+license:
+  spdx: Apache-2.0
+  name: Apache License 2.0
+  url: https://www.apache.org/licenses/LICENSE-2.0
+  verified_at: "2026-10-26"
+  verified_via:
+    - "Hugging Face API https://huggingface.co/api/datasets/gretelai/synthetic_text_to_sql at revision 740ab236: cardData.license = apache-2.0"
+    - "README.md front matter at that revision: license: apache-2.0"
+  notes: Card metadata, not legal review.
+attribution: >-
+  Synthetic-Text-To-SQL by Gretel.ai (Meyer et al., 2024),
+  https://huggingface.co/datasets/gretelai/synthetic_text_to_sql, Apache-2.0. Each item carries its own
+  CREATE TABLE / INSERT context, which the grader loads into a fresh in-memory SQLite database.
+modifications: Sampled and filtered (SQLite-executable); the question is wrapped in a prompt that includes the context.
+standin: "Synthetic stand-in (44 questions over the kit's own bundled SQLite database 'shop', graded with the read-only sql_db grader)."

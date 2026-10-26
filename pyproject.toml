@@ -18,6 +18,10 @@ dependencies = [
     "uvicorn>=0.30",
 ]
 
+[project.optional-dependencies]
+# `glmkit demo fetch text2sql` reads a parquet file
+datasets = ["pyarrow>=15"]
+
 [project.scripts]
 glmkit = "glmkit.cli:main"
 
